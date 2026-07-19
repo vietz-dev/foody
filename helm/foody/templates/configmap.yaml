@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "foody.configMapName" . }}
+  labels:
+    {{- include "foody.labels" . | nindent 4 }}
+data:
+  NODE_ENV: "production"
+  HOST: "0.0.0.0"
+  PORT: {{ .Values.port | quote }}
+  # SvelteKit adapter-node: trusted origin for form-action/POST CSRF checks
+  # behind a reverse proxy. Must equal the public URL.
+  ORIGIN: {{ .Values.config.appUrl | quote }}
+  BODY_SIZE_LIMIT: {{ .Values.config.bodySizeLimit | quote }}
+  # better-auth base URL (OIDC callbacks) — same public URL.
+  BETTER_AUTH_URL: {{ .Values.config.appUrl | quote }}
+  OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
+  DATABASE_URL: {{ include "foody.databaseUrl" . | quote }}

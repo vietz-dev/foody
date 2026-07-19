@@ -1,0 +1,16 @@
+apiVersion: v2
+name: foody
+description: Foody — KI-gestützte Essensplanung (SvelteKit + SQLite) für den Self-Host im Kubernetes-Cluster
+
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - foody
+  - meal-planning
+  - recipes
+  - sveltekit
+sources:
+  - https://github.com/justinvietz/foody
+maintainers:
+  - name: Justin Vietz

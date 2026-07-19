@@ -8,3 +8,9 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+/src/lib/server/generated/prisma
+*.db
+*.db-journal
+*.db-shm
+*.db-wal

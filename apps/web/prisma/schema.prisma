@@ -1,0 +1,157 @@
+// Foody — Prisma schema
+// User / Session / Account / Verification are managed by better-auth
+// (generated via `npx @better-auth/cli generate`) — do not hand-edit those.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/server/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---- Domain models ----
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  recipes         Recipe[]
+  weeklyPlanItems WeeklyPlanItem[]
+
+  @@map("households")
+}
+
+enum RecipeSourceType {
+  website
+  book
+  video
+}
+
+model Recipe {
+  id              String           @id @default(cuid())
+  householdId     String
+  household       Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name            String
+  sourceType      RecipeSourceType @default(book)
+  sourceUrl       String?
+  bookTitle       String?
+  bookPage        Int?
+  servings        Int?
+  prepTimeMinutes Int?
+  notes           String?
+  createdAt       DateTime         @default(now())
+
+  ingredients RecipeIngredient[]
+  steps       RecipeStep[]
+  planItems   WeeklyPlanItem[]
+
+  @@index([householdId])
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id        String   @id @default(cuid())
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  name      String
+  quantity  Decimal?
+  unit      String?
+  isRawText Boolean  @default(false)
+  sortOrder Int      @default(0)
+
+  @@index([recipeId])
+  @@map("recipe_ingredients")
+}
+
+model RecipeStep {
+  id          String @id @default(cuid())
+  recipeId    String
+  recipe      Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  description String
+  sortOrder   Int    @default(0)
+
+  @@index([recipeId])
+  @@map("recipe_steps")
+}
+
+model WeeklyPlanItem {
+  id          String    @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  recipeId    String
+  recipe      Recipe    @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  selected    Boolean   @default(false)
+  selectedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([householdId, recipeId])
+  @@index([householdId])
+  @@map("weekly_plan_items")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  householdId   String?
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}

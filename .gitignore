@@ -21,10 +21,16 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env
+.env.*
+!.env.example
+
+# local databases (SQLite) and backups — MUST never be committed
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.bak-*
 
 # turbo
 .turbo

@@ -1,0 +1,149 @@
+name: Release
+
+# ============================================
+# Changesets-driven release. One workflow, no PAT.
+#
+# Flow:
+#   dev:      pnpm changeset → PR → merge to main
+#   release:  changesets/action sees changesets → opens "chore: release" PR
+#             (version.sh bumps apps/web/package.json + the Helm chart)
+#   merge:    the Version PR merges → no changesets left → publish.sh runs.
+#             If v<version> is not yet tagged it signals published=true, which
+#             fans out to: build+push the image, package+push the Helm chart,
+#             and create the GitHub Release.
+#
+# Everything runs in this single workflow, so the GITHUB_TOKEN
+# "can't trigger another workflow" rule never bites us — no PAT needed.
+#
+# Registry layout (image and chart must NOT share a package path):
+#   image  → ghcr.io/<owner>/foody:<version>
+#   chart  → ghcr.io/<owner>/charts/foody:<version>
+# ============================================
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write       # version PR commit + create GitHub Release/tag
+  pull-requests: write  # open the "chore: release" PR
+  packages: write       # push image + Helm chart to ghcr.io
+
+jobs:
+  release:
+    name: Version or Publish
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create Version PR or signal release
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: bash scripts/version.sh
+          publish: bash scripts/publish.sh
+          title: "chore: release"
+          commit: "chore: release"
+          # We create one clean v<version> release ourselves in the helm job,
+          # instead of the per-package releases this action would otherwise make.
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read released version
+        id: version
+        if: steps.changesets.outputs.published == 'true'
+        run: echo "version=$(node -p "require('./apps/web/package.json').version")" >> "$GITHUB_OUTPUT"
+
+  image:
+    name: Build & Push image
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/foody
+          tags: |
+            type=raw,value=${{ needs.release.outputs.version }}
+            type=raw,value=latest
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  helm:
+    name: Package Helm & Create Release
+    needs: [release, image]
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package Helm chart
+        run: helm package helm/foody
+
+      # Pushed under /charts so the chart package path never collides with the
+      # image package (ghcr.io/<owner>/foody). Result: ghcr.io/<owner>/charts/foody
+      - name: Push Helm chart to ghcr.io
+        run: helm push foody-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ needs.release.outputs.version }}" \
+            --title "v${{ needs.release.outputs.version }}" \
+            --generate-notes

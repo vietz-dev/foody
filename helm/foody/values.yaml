@@ -1,0 +1,173 @@
+# =============================================================================
+# Foody Helm values
+#
+# Foody is a single self-hosted SvelteKit server (adapter-node) backed by a
+# file-based SQLite database. Because SQLite is a single-writer store on a
+# ReadWriteOnce volume, the app runs as exactly ONE replica with a Recreate
+# rollout strategy — there is deliberately no horizontal autoscaling.
+# =============================================================================
+
+# --- Global settings ---
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+# --- Service Account ---
+serviceAccount:
+  create: true
+  automount: false
+  annotations: {}
+  name: ""
+
+# --- Image ---
+# Built and pushed by the Release workflow (.github/workflows/release.yml).
+#   docker pull ghcr.io/vietz-dev/foody:<version>
+# tag defaults to Chart.appVersion when left empty.
+image:
+  repository: ghcr.io/vietz-dev/foody
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Foody serves the whole app (frontend + auth + API routes) from one process.
+port: 3000
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# --- Scheduling ---
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podLabels: {}
+
+# --- Security contexts ---
+# The image runs as the non-root `node` user (uid/gid 1000). fsGroup makes the
+# mounted SQLite volume group-writable. readOnlyRootFilesystem is safe because
+# the DB lives on the mounted volume and scratch writes go to an emptyDir /tmp.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# --- Probes ---
+# `/` returns 200 (or a 3xx redirect to /login) once the server is up — both
+# count as healthy for an httpGet probe.
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Extra volumes/mounts for the app pod (beyond the DB volume + /tmp scratch).
+extraVolumes: []
+extraVolumeMounts: []
+
+# --- Database migrations ---
+# An initContainer runs `prisma migrate deploy` against the SQLite volume before
+# the app container starts. Uses the same image (which ships the Prisma CLI,
+# schema and migrations). Disable only if you apply migrations out-of-band.
+migrations:
+  enabled: true
+
+# --- Persistence (SQLite database file) ---
+# The database file lives on this volume at <mountPath>/<dbFilename>.
+# Disabling persistence uses an emptyDir — DATA IS LOST on pod restart
+# (testing only).
+persistence:
+  enabled: true
+  # Reuse an existing PVC instead of creating one.
+  existingClaim: ""
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  mountPath: /data
+  dbFilename: foody.db
+
+# --- Configuration (non-sensitive → ConfigMap) ---
+config:
+  # Public URL guests use to reach Foody. Drives both the SvelteKit adapter-node
+  # ORIGIN check (required for form actions/POST behind a proxy) and the
+  # better-auth base URL. MUST match the ingress host + scheme.
+  appUrl: "https://foody.local"
+  # Pocket ID / generic OIDC issuer (discovery at <issuer>/.well-known/openid-configuration).
+  oidcIssuer: "https://auth.vietz.dev"
+  # adapter-node request body limit — raised for multi-photo book scans.
+  bodySizeLimit: "20M"
+
+# --- Secrets (sensitive → Kubernetes Secret) ---
+# For production, create the Secret manually and set existingSecret. Otherwise
+# the chart creates one from the values below (all required in that case).
+# The Secret must expose these keys:
+#   BETTER_AUTH_SECRET, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, ANTHROPIC_API_KEY
+secrets:
+  existingSecret: ""
+  # openssl rand -base64 32
+  betterAuthSecret: ""
+  oidcClientId: ""
+  oidcClientSecret: ""
+  anthropicApiKey: ""
+
+# --- Service ---
+service:
+  type: ClusterIP
+  port: 3000
+  annotations: {}
+
+# --- Ingress ---
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: foody.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: foody-tls
+    #   hosts:
+    #     - foody.local
+
+# --- Gateway API HTTPRoute (alternative to ingress) ---
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs:
+    - name: gateway
+      sectionName: http
+  hostnames:
+    - foody.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /

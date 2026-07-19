@@ -1,0 +1,20 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "foody.pvcName" . }}
+  labels:
+    {{- include "foody.labels" . | nindent 4 }}
+  {{- /* Keep the SQLite data even if the release is uninstalled. */}}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - {{ .Values.persistence.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+  {{- if .Values.persistence.storageClass }}
+  storageClassName: {{ .Values.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}

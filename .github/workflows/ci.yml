@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-web:
+    name: Test Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The Prisma client is generated into the app source and imported by it,
+      # and `svelte-kit sync` writes the tsconfig the app extends — both must
+      # run before type-check/build, mirroring the Dockerfile build order.
+      - name: Generate Prisma client
+        run: pnpm --filter web exec prisma generate
+
+      - name: Sync SvelteKit
+        run: pnpm --filter web exec svelte-kit sync
+
+      - name: Type check
+        run: pnpm --filter web run check-types
+
+      - name: Build
+        run: pnpm --filter web run build
+
+  lint-helm:
+    name: Lint Helm Chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      # The chart's secret.yaml `required`s four keys when no existingSecret is
+      # set — pass dummies so lint/template can render the default path.
+      - name: Lint Helm chart
+        run: |
+          helm lint helm/foody \
+            --set secrets.betterAuthSecret=ci-test \
+            --set secrets.oidcClientId=ci-test \
+            --set secrets.oidcClientSecret=ci-test \
+            --set secrets.anthropicApiKey=ci-test
+
+      - name: Template Helm chart
+        run: |
+          SECRETS="--set secrets.betterAuthSecret=ci --set secrets.oidcClientId=ci --set secrets.oidcClientSecret=ci --set secrets.anthropicApiKey=ci"
+          echo "::group::defaults (chart-managed secret + ingress)"
+          helm template test-release helm/foody $SECRETS
+          echo "::endgroup::"
+          echo "::group::existing secret + HTTPRoute instead of ingress"
+          helm template test-release helm/foody \
+            --set secrets.existingSecret=foody-secret \
+            --set ingress.enabled=false \
+            --set httpRoute.enabled=true
+          echo "::endgroup::"
+          echo "::group::persistence disabled (emptyDir), migrations off"
+          helm template test-release helm/foody $SECRETS \
+            --set persistence.enabled=false \
+            --set migrations.enabled=false
+          echo "::endgroup::"

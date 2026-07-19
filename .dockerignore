@@ -1,0 +1,22 @@
+**/node_modules
+**/.svelte-kit
+**/build
+**/.turbo
+**/coverage
+**/test-results
+**/playwright-report
+
+# Local databases and env files must never leak into the image.
+**/*.db
+**/*.db-*
+**/*.db.bak-*
+**/.env
+**/.env.*
+!**/.env.example
+
+.git
+.github
+.claude
+.vscode
+**/.DS_Store
+helm

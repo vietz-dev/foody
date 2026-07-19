@@ -1,0 +1,57 @@
+Foody wurde als Release "{{ .Release.Name }}" im Namespace "{{ .Release.Namespace }}" installiert.
+
+{{- if .Values.ingress.enabled }}
+
+Aufrufbar unter:
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else if .Values.httpRoute.enabled }}
+
+Aufrufbar über die Gateway-API-Route unter:
+{{- range .Values.httpRoute.hostnames }}
+  http://{{ . }}/
+{{- end }}
+{{- else }}
+
+Kein Ingress/HTTPRoute aktiv. Per Port-Forward testen:
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "foody.fullname" . }} 8080:{{ .Values.service.port }}
+  # dann http://127.0.0.1:8080 öffnen
+{{- end }}
+
+WICHTIG: config.appUrl ({{ .Values.config.appUrl }}) muss exakt der öffentlichen
+URL (Schema + Host) entsprechen — davon hängen der SvelteKit-ORIGIN-Check
+(Formular-POSTs) und die better-auth/OIDC-Callbacks ab.
+
+{{- if .Values.persistence.enabled }}
+{{- if .Values.persistence.existingClaim }}
+
+Datenbank: vorhandener PVC "{{ .Values.persistence.existingClaim }}" (SQLite unter {{ include "foody.databaseUrl" . }}).
+{{- else }}
+
+Datenbank: chart-verwalteter PVC "{{ include "foody.pvcName" . }}" ({{ .Values.persistence.size }}).
+Der PVC ist mit `helm.sh/resource-policy: keep` annotiert und überlebt ein `helm uninstall`.
+{{- end }}
+{{- else }}
+
+WARNUNG: persistence.enabled=false — die SQLite-DB liegt in einem emptyDir und
+geht bei jedem Pod-Neustart verloren. Nur zum Testen verwenden.
+{{- end }}
+
+{{- if .Values.secrets.existingSecret }}
+
+Secrets: vorhandenes Secret "{{ .Values.secrets.existingSecret }}".
+{{- else }}
+
+WARNUNG: Das Chart hat ein Secret aus den values erzeugt. Für Produktion das
+Secret manuell anlegen und secrets.existingSecret setzen.
+{{- end }}
+
+{{- if eq .Values.image.repository "ghcr.io/OWNER/foody" }}
+
+HINWEIS: image.repository steht noch auf dem Platzhalter "ghcr.io/OWNER/foody".
+Image bauen/pushen (docker build -t <repo>:<tag> . im Repo-Root) und
+image.repository/image.tag entsprechend setzen.
+{{- end }}
