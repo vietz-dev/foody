@@ -20,6 +20,7 @@ model Household {
 
   recipes         Recipe[]
   weeklyPlanItems WeeklyPlanItem[]
+  ingredients     Ingredient[]
 
   @@map("households")
 }
@@ -30,19 +31,25 @@ enum RecipeSourceType {
   video
 }
 
+enum IngredientStatus {
+  pending
+  confirmed
+}
+
 model Recipe {
-  id              String           @id @default(cuid())
-  householdId     String
-  household       Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  name            String
-  sourceType      RecipeSourceType @default(book)
-  sourceUrl       String?
-  bookTitle       String?
-  bookPage        Int?
-  servings        Int?
-  prepTimeMinutes Int?
-  notes           String?
-  createdAt       DateTime         @default(now())
+  id               String           @id @default(cuid())
+  householdId      String
+  household        Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name             String
+  sourceType       RecipeSourceType @default(book)
+  sourceUrl        String?
+  bookTitle        String?
+  bookPage         Int?
+  servings         Int?
+  declaredServings Int?
+  prepTimeMinutes  Int?
+  notes            String?
+  createdAt        DateTime         @default(now())
 
   ingredients RecipeIngredient[]
   steps       RecipeStep[]
@@ -53,16 +60,19 @@ model Recipe {
 }
 
 model RecipeIngredient {
-  id        String   @id @default(cuid())
-  recipeId  String
-  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  name      String
-  quantity  Decimal?
-  unit      String?
-  isRawText Boolean  @default(false)
-  sortOrder Int      @default(0)
+  id           String      @id @default(cuid())
+  recipeId     String
+  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  name         String
+  quantity     Decimal?
+  unit         String?
+  isRawText    Boolean     @default(false)
+  sortOrder    Int         @default(0)
+  ingredientId String?
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
 
   @@index([recipeId])
+  @@index([ingredientId])
   @@map("recipe_ingredients")
 }
 
@@ -86,10 +96,28 @@ model WeeklyPlanItem {
   selected    Boolean   @default(false)
   selectedAt  DateTime?
   createdAt   DateTime  @default(now())
+  portions    Int       @default(2)
 
   @@unique([householdId, recipeId])
   @@index([householdId])
   @@map("weekly_plan_items")
+}
+
+model Ingredient {
+  id          String           @id @default(cuid())
+  householdId String
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  status      IngredientStatus @default(pending)
+  isStaple    Boolean          @default(false)
+  aliases     String[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  recipeIngredients RecipeIngredient[]
+
+  @@index([householdId])
+  @@map("ingredients")
 }
 
 model User {

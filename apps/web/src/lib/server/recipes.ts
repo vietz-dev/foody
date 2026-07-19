@@ -76,6 +76,7 @@ export function createRecipe(data: CreateRecipeInput) {
 			bookTitle: data.bookTitle,
 			bookPage: data.bookPage,
 			servings: 1,
+			declaredServings: data.servings,
 			prepTimeMinutes: data.prepTimeMinutes,
 			notes: data.notes,
 			ingredients: {
@@ -107,6 +108,7 @@ export async function updateRecipe(recipeId: string, data: UpdateRecipeInput) {
 				name: data.name,
 				bookTitle: data.bookTitle,
 				bookPage: data.bookPage,
+				declaredServings: data.servings,
 				prepTimeMinutes: data.prepTimeMinutes,
 				notes: data.notes
 			}
