@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { resolveIngredientIds } from './catalog/map-on-write';
 
 export interface RecipeIngredientInput {
 	quantity: number;
@@ -65,8 +66,13 @@ export type RecipeWithDetails = NonNullable<Awaited<ReturnType<typeof getRecipeW
 // Zutatenmengen werden beim Speichern immer auf 1 Portion normalisiert
 // (recipe.servings ist danach konstant 1) — der Nutzer gibt die Portionenzahl
 // des Original-Rezepts nur als Divisor an.
-export function createRecipe(data: CreateRecipeInput) {
+export async function createRecipe(data: CreateRecipeInput) {
 	const divisor = data.servings > 0 ? data.servings : 1;
+
+	const ingredientIds = await resolveIngredientIds(
+		data.householdId,
+		data.ingredients.map((ing) => ing.name)
+	);
 
 	return prisma.recipe.create({
 		data: {
@@ -85,7 +91,8 @@ export function createRecipe(data: CreateRecipeInput) {
 					quantity: ing.quantity / divisor,
 					unit: ing.unit,
 					name: ing.name,
-					isRawText: false
+					isRawText: false,
+					ingredientId: ingredientIds.get(ing.name)
 				}))
 			},
 			steps: {
@@ -100,6 +107,15 @@ export function createRecipe(data: CreateRecipeInput) {
 
 export async function updateRecipe(recipeId: string, data: UpdateRecipeInput) {
 	const divisor = data.servings > 0 ? data.servings : 1;
+
+	const existing = await prisma.recipe.findUniqueOrThrow({
+		where: { id: recipeId },
+		select: { householdId: true }
+	});
+	const ingredientIds = await resolveIngredientIds(
+		existing.householdId,
+		data.ingredients.map((ing) => ing.name)
+	);
 
 	await prisma.$transaction(async (tx) => {
 		await tx.recipe.update({
@@ -122,7 +138,8 @@ export async function updateRecipe(recipeId: string, data: UpdateRecipeInput) {
 				quantity: ing.quantity / divisor,
 				unit: ing.unit,
 				name: ing.name,
-				isRawText: false
+				isRawText: false,
+				ingredientId: ingredientIds.get(ing.name)
 			}))
 		});
 		await tx.recipeStep.createMany({

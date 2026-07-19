@@ -12,6 +12,8 @@
 		planned: boolean;
 		plannedAt: Date | null;
 		prepTimeMinutes: number | null;
+		portions: number;
+		declaredServings: number | null;
 	}
 
 	let items = $state<PlanItem[]>(data.recipes.map((r) => ({ ...r })));
@@ -42,6 +44,27 @@
 			item.plannedAt = item.planned ? new Date() : null;
 		} finally {
 			pending.delete(recipeId);
+		}
+	}
+
+	async function setPortions(recipeId: string, portions: number) {
+		const item = items.find((r) => r.id === recipeId);
+		if (!item) return;
+
+		const previous = item.portions;
+		item.portions = portions;
+
+		try {
+			const res = await fetch(`/plan/${recipeId}/portions`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ portions })
+			});
+			if (!res.ok) {
+				item.portions = previous;
+			}
+		} catch {
+			item.portions = previous;
 		}
 	}
 
@@ -94,7 +117,12 @@
 				</h2>
 				<ul class="m-0 flex list-none flex-col gap-2 p-0">
 					{#each planned as recipe (recipe.id)}
-						<WeeklyPlanRow {recipe} pending={pending.has(recipe.id)} ontoggle={() => toggle(recipe.id)} />
+						<WeeklyPlanRow
+							{recipe}
+							pending={pending.has(recipe.id)}
+							ontoggle={() => toggle(recipe.id)}
+							onportionschange={(portions) => setPortions(recipe.id, portions)}
+						/>
 					{/each}
 				</ul>
 			</section>
@@ -111,7 +139,12 @@
 				</h2>
 				<ul class="m-0 flex list-none flex-col gap-2 p-0">
 					{#each unplanned as recipe (recipe.id)}
-						<WeeklyPlanRow {recipe} pending={pending.has(recipe.id)} ontoggle={() => toggle(recipe.id)} />
+						<WeeklyPlanRow
+							{recipe}
+							pending={pending.has(recipe.id)}
+							ontoggle={() => toggle(recipe.id)}
+							onportionschange={(portions) => setPortions(recipe.id, portions)}
+						/>
 					{/each}
 				</ul>
 			</section>

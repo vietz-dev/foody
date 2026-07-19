@@ -1,18 +1,31 @@
 <script lang="ts">
 	import { Checkbox } from '@ark-ui/svelte';
+	import PortionStepper from './PortionStepper.svelte';
 
 	interface RecipeWithPlan {
 		id: string;
 		name: string;
 		planned: boolean;
 		prepTimeMinutes: number | null;
+		portions?: number;
+		declaredServings?: number | null;
 	}
 
 	let {
 		recipe,
 		pending = false,
-		ontoggle
-	}: { recipe: RecipeWithPlan; pending?: boolean; ontoggle: () => void } = $props();
+		ontoggle,
+		onportionschange
+	}: {
+		recipe: RecipeWithPlan;
+		pending?: boolean;
+		ontoggle: () => void;
+		onportionschange?: (portions: number) => void;
+	} = $props();
+
+	let portions = $derived(recipe.portions ?? 2);
+
+	let standardServings = $derived(recipe.declaredServings ?? 2);
 </script>
 
 <li class="flex items-center gap-3 rounded-[10px] bg-surface-1 px-3 py-2.5" class:opacity-60={pending}>
@@ -45,4 +58,11 @@
 			<span class="text-xs text-secondary">⏱ {recipe.prepTimeMinutes} Min.</span>
 		{/if}
 	</a>
+
+	{#if recipe.planned}
+		<div class="flex shrink-0 flex-col items-end gap-0.5">
+			<PortionStepper bind:value={portions} min={1} onchange={(value) => onportionschange?.(value)} />
+			<span class="text-[11px] text-secondary">Standard: {standardServings}</span>
+		</div>
+	{/if}
 </li>
