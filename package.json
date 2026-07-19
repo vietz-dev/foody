@@ -13,6 +13,7 @@
     "@changesets/cli": "^2.29.0",
     "prettier": "^3.8.1",
     "prettier-plugin-svelte": "^3.5.1",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "turbo": "^2.10.5"
   },
   "packageManager": "pnpm@10.0.0",
