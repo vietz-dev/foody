@@ -30,7 +30,7 @@ const baseURL = dev
 export const auth = betterAuth({
 	baseURL,
 	secret: env.BETTER_AUTH_SECRET,
-	database: prismaAdapter(prisma, { provider: 'sqlite' }),
+	database: prismaAdapter(prisma, { provider: 'postgresql' }),
 	user: {
 		additionalFields: {
 			householdId: {

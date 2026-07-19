@@ -1,10 +1,13 @@
 # =============================================================================
 # Foody Helm values
 #
-# Foody is a single self-hosted SvelteKit server (adapter-node) backed by a
-# file-based SQLite database. Because SQLite is a single-writer store on a
-# ReadWriteOnce volume, the app runs as exactly ONE replica with a Recreate
-# rollout strategy — there is deliberately no horizontal autoscaling.
+# Foody is a self-hosted SvelteKit server (adapter-node) backed by PostgreSQL.
+# Point it at a Postgres via one of:
+#   * postgres.enabled=true        → a bundled single-node Postgres StatefulSet
+#                                     (quick start; fine for a single household).
+#   * externalDatabase.*           → an external / operator-managed Postgres
+#                                     (CNPG, cloud RDS, …) — the recommended path.
+# The app process is stateless, so it scales and rolls normally.
 # =============================================================================
 
 # --- Global settings ---
@@ -49,9 +52,9 @@ podAnnotations: {}
 podLabels: {}
 
 # --- Security contexts ---
-# The image runs as the non-root `node` user (uid/gid 1000). fsGroup makes the
-# mounted SQLite volume group-writable. readOnlyRootFilesystem is safe because
-# the DB lives on the mounted volume and scratch writes go to an emptyDir /tmp.
+# The image runs as the non-root `node` user (uid/gid 1000). readOnlyRootFilesystem
+# is safe: the app is stateless (all data lives in Postgres) and scratch writes go
+# to an emptyDir /tmp.
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
@@ -91,25 +94,46 @@ extraVolumes: []
 extraVolumeMounts: []
 
 # --- Database migrations ---
-# An initContainer runs `prisma migrate deploy` against the SQLite volume before
-# the app container starts. Uses the same image (which ships the Prisma CLI,
-# schema and migrations). Disable only if you apply migrations out-of-band.
+# An initContainer runs `prisma migrate deploy` against Postgres before the app
+# container starts. Uses the same image (which ships the Prisma CLI, schema and
+# migrations). Disable only if you apply migrations out-of-band.
 migrations:
   enabled: true
 
-# --- Persistence (SQLite database file) ---
-# The database file lives on this volume at <mountPath>/<dbFilename>.
-# Disabling persistence uses an emptyDir — DATA IS LOST on pod restart
-# (testing only).
-persistence:
-  enabled: true
-  # Reuse an existing PVC instead of creating one.
-  existingClaim: ""
-  storageClass: ""
-  accessMode: ReadWriteOnce
-  size: 1Gi
-  mountPath: /data
-  dbFilename: foody.db
+# --- Bundled PostgreSQL (quick start) ---
+# When enabled, the chart deploys a single-node Postgres StatefulSet and wires
+# DATABASE_URL to it automatically. For anything beyond a single household prefer
+# externalDatabase with a real operator (CNPG, cloud managed Postgres).
+postgres:
+  enabled: false
+  image: postgres:17-alpine
+  auth:
+    username: foody
+    database: foody
+    # Used to create the chart-managed secret when enabled and no existingSecret.
+    password: ""
+    # Reference an existing secret holding key `password` instead of the above.
+    existingSecret: ""
+  persistence:
+    size: 8Gi
+    storageClass: ""
+  resources: {}
+
+# --- External PostgreSQL (recommended — used when postgres.enabled=false) ---
+externalDatabase:
+  # Option A (preferred — CNPG / operator): pull a ready-made DSN from a Secret.
+  # CNPG publishes a full `postgres://…` connection string under the "uri" key of
+  # its "<cluster>-app" secret; point existingSecret at it and you're done.
+  existingSecret: ""
+  existingSecretUrlKey: "uri"
+  # Option B: assemble the DSN from parts; password comes from a Secret key.
+  # Set existingSecretUrlKey: "" to use this path.
+  host: ""
+  port: 5432
+  database: foody
+  username: foody
+  existingSecretPasswordKey: "password"
+  sslmode: require
 
 # --- Configuration (non-sensitive → ConfigMap) ---
 config:

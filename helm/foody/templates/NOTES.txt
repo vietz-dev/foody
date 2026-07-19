@@ -25,19 +25,22 @@ WICHTIG: config.appUrl ({{ .Values.config.appUrl }}) muss exakt der öffentliche
 URL (Schema + Host) entsprechen — davon hängen der SvelteKit-ORIGIN-Check
 (Formular-POSTs) und die better-auth/OIDC-Callbacks ab.
 
-{{- if .Values.persistence.enabled }}
-{{- if .Values.persistence.existingClaim }}
+{{- if .Values.postgres.enabled }}
 
-Datenbank: vorhandener PVC "{{ .Values.persistence.existingClaim }}" (SQLite unter {{ include "foody.databaseUrl" . }}).
+Datenbank: gebündeltes Postgres-StatefulSet "{{ include "foody.postgres.fullname" . }}"
+(PVC {{ .Values.postgres.persistence.size }}). Für Produktion/Mehrknoten stattdessen
+externalDatabase auf einen echten Postgres (z. B. CNPG) zeigen lassen.
+{{- else if and .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretUrlKey }}
+
+Datenbank: externer Postgres, DSN aus Secret "{{ .Values.externalDatabase.existingSecret }}"
+(Schlüssel "{{ .Values.externalDatabase.existingSecretUrlKey }}").
+{{- else if .Values.externalDatabase.host }}
+
+Datenbank: externer Postgres unter {{ .Values.externalDatabase.host }}:{{ .Values.externalDatabase.port }}/{{ .Values.externalDatabase.database }}.
 {{- else }}
 
-Datenbank: chart-verwalteter PVC "{{ include "foody.pvcName" . }}" ({{ .Values.persistence.size }}).
-Der PVC ist mit `helm.sh/resource-policy: keep` annotiert und überlebt ein `helm uninstall`.
-{{- end }}
-{{- else }}
-
-WARNUNG: persistence.enabled=false — die SQLite-DB liegt in einem emptyDir und
-geht bei jedem Pod-Neustart verloren. Nur zum Testen verwenden.
+WARNUNG: Keine Datenbank konfiguriert. Entweder postgres.enabled=true setzen oder
+externalDatabase.* auf einen vorhandenen Postgres zeigen lassen.
 {{- end }}
 
 {{- if .Values.secrets.existingSecret }}

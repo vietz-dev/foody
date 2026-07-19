@@ -15,4 +15,3 @@ data:
   # better-auth base URL (OIDC callbacks) — same public URL.
   BETTER_AUTH_URL: {{ .Values.config.appUrl | quote }}
   OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
-  DATABASE_URL: {{ include "foody.databaseUrl" . | quote }}

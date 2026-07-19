@@ -5,12 +5,10 @@ metadata:
   labels:
     {{- include "foody.labels" . | nindent 4 }}
 spec:
-  # SQLite is a single-writer store on a ReadWriteOnce volume: exactly one
-  # replica, and Recreate so the old pod releases the volume before the new one
-  # starts (RollingUpdate would deadlock on the RWO PVC).
+  # State lives in Postgres, so the app is stateless and can scale/roll normally.
   replicas: {{ .Values.replicaCount }}
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       {{- include "foody.selectorLabels" . | nindent 6 }}
@@ -56,9 +54,9 @@ spec:
                 name: {{ include "foody.configMapName" . }}
             - secretRef:
                 name: {{ include "foody.secretName" . }}
+          env:
+            {{- include "foody.databaseEnv" . | nindent 12 }}
           volumeMounts:
-            - name: data
-              mountPath: {{ .Values.persistence.mountPath }}
             - name: tmp
               mountPath: /tmp
       {{- end }}
@@ -79,6 +77,8 @@ spec:
                 name: {{ include "foody.configMapName" . }}
             - secretRef:
                 name: {{ include "foody.secretName" . }}
+          env:
+            {{- include "foody.databaseEnv" . | nindent 12 }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -92,21 +92,12 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           volumeMounts:
-            - name: data
-              mountPath: {{ .Values.persistence.mountPath }}
             - name: tmp
               mountPath: /tmp
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
       volumes:
-        - name: data
-          {{- if .Values.persistence.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ include "foody.pvcName" . }}
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
         - name: tmp
           emptyDir: {}
         {{- with .Values.extraVolumes }}

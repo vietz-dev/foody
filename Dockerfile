@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ============================================================================
-# Foody — SvelteKit (adapter-node) + Prisma + better-sqlite3
+# Foody — SvelteKit (adapter-node) + Prisma + PostgreSQL (pg driver)
 # Monorepo build: context must be the repository root.
 #   docker build -t ghcr.io/OWNER/foody:<tag> .
 # ============================================================================
@@ -17,9 +17,10 @@ WORKDIR /app
 # ----------------------------------------------------------------------------
 FROM base AS builder
 
-# Toolchain for the native better-sqlite3 addon.
+# ca-certificates for pnpm's registry TLS. The `pg` driver is pure JS, so no
+# native build toolchain (python3/make/g++) is required.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 make g++ ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Workspace manifests first — keeps `pnpm install` cached across source changes.
@@ -42,10 +43,9 @@ RUN pnpm --filter web exec svelte-kit sync \
 # Stage 2: runtime
 # The whole built workspace is carried over so the runtime keeps:
 #   - apps/web/build           → the adapter-node server (`node build`)
-#   - node_modules (.pnpm)     → prod deps incl. the native better-sqlite3 addon
+#   - node_modules (.pnpm)     → prod deps incl. the `pg` Postgres driver
 #   - prisma/ + prisma.config  → schema + migrations for `prisma migrate deploy`
 #   - the Prisma CLI           → run by the chart's migrate initContainer
-# Same base image as the builder, so the compiled native addon stays ABI-compatible.
 # ----------------------------------------------------------------------------
 FROM base AS runner
 ENV NODE_ENV=production \

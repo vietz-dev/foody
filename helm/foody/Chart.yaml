@@ -1,6 +1,6 @@
 apiVersion: v2
 name: foody
-description: Foody — KI-gestützte Essensplanung (SvelteKit + SQLite) für den Self-Host im Kubernetes-Cluster
+description: Foody — KI-gestützte Essensplanung (SvelteKit + PostgreSQL) für den Self-Host im Kubernetes-Cluster
 
 type: application
 version: 0.1.1

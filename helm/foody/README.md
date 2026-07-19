@@ -2,13 +2,16 @@
 
 Self-Hosting von **Foody** (KI-gestützte Essensplanung) im Kubernetes-Cluster.
 
-Foody ist ein einzelner SvelteKit-Server (`adapter-node`, Port 3000) mit einer
-**SQLite**-Datei-Datenbank (Prisma + better-sqlite3). Daraus folgt bewusst:
+Foody ist ein SvelteKit-Server (`adapter-node`, Port 3000) mit einer
+**PostgreSQL**-Datenbank (Prisma + `pg`-Treiber). Der App-Prozess ist zustandslos:
 
-- **1 Replica, `Recreate`-Rollout** — SQLite ist ein Single-Writer-Store auf
-  einem `ReadWriteOnce`-Volume; mehrere Replicas / RollingUpdate sind nicht
-  möglich. Kein HPA.
-- **PVC** für die DB-Datei (`helm.sh/resource-policy: keep` → überlebt `uninstall`).
+- **Stateless App** — skaliert und rollt normal (RollingUpdate). Der gesamte
+  Zustand liegt in Postgres.
+- **Datenbank** über einen von zwei Wegen:
+  - `postgres.enabled=true` → gebündeltes Single-Node-Postgres-StatefulSet
+    (Schnellstart; für einen Haushalt ausreichend).
+  - `externalDatabase.*` → externer/operator-verwalteter Postgres (CNPG,
+    Cloud-RDS, …) — der empfohlene Weg.
 - **initContainer** führt vor dem Start `prisma migrate deploy` aus.
 
 ## 1. Image bauen
@@ -53,9 +56,24 @@ ingress:
       hosts:
         - foody.example.com
 
-persistence:
-  size: 1Gi
-  storageClass: ""     # leer = Default-StorageClass des Clusters
+# Datenbank — Variante A: externer Postgres, DSN aus einem Secret (empfohlen).
+# Ein CNPG-Cluster veröffentlicht z. B. einen fertigen `postgres://…`-String
+# unter dem Key "uri" seines "<cluster>-app"-Secrets.
+externalDatabase:
+  existingSecret: foody-db-app
+  existingSecretUrlKey: uri
+```
+
+Datenbank — Variante B: gebündeltes Postgres vom Chart (Schnellstart):
+
+```yaml
+postgres:
+  enabled: true
+  auth:
+    password: "<openssl rand -base64 24>"   # oder existingSecret setzen
+  persistence:
+    size: 8Gi
+    storageClass: ""     # leer = Default-StorageClass des Clusters
 ```
 
 `config.appUrl` **muss** exakt der öffentlichen URL entsprechen (SvelteKit-
@@ -87,12 +105,15 @@ helm test foody --namespace foody
 
 ## Datenbank-Backup
 
-SQLite-Datei liegt im PVC unter `persistence.mountPath` (`/data/foody.db`):
+Mit `pg_dump` gegen den konfigurierten Postgres (Beispiel für das gebündelte
+StatefulSet — Passwort aus dem Chart-Secret):
 
 ```bash
-kubectl -n foody exec deploy/foody -- \
-  sh -c 'cat /data/foody.db' > foody-backup.db
+kubectl -n foody exec statefulset/foody-postgres -- \
+  sh -c 'pg_dump -U foody foody' > foody-backup.sql
 ```
+
+Bei externem Postgres/CNPG entsprechend die Backup-Mechanismen des Operators nutzen.
 
 ## Wichtige Werte
 
@@ -102,8 +123,12 @@ kubectl -n foody exec deploy/foody -- \
 | `config.appUrl` | `https://foody.local` | Öffentliche URL (ORIGIN + auth) |
 | `config.oidcIssuer` | `https://auth.vietz.dev` | OIDC-Issuer (Pocket ID) |
 | `config.bodySizeLimit` | `20M` | Upload-Limit (Buchfoto-Scans) |
-| `persistence.size` | `1Gi` | Größe des DB-Volumes |
-| `persistence.existingClaim` | `""` | Vorhandenen PVC weiterverwenden |
+| `postgres.enabled` | `false` | Gebündeltes Postgres-StatefulSet deployen |
+| `postgres.auth.password` / `.existingSecret` | `""` | Passwort für gebündeltes Postgres |
+| `postgres.persistence.size` | `8Gi` | Volume-Größe des gebündelten Postgres |
+| `externalDatabase.existingSecret` | `""` | Secret mit fertiger DSN (Key `uri`) |
+| `externalDatabase.host` / `.username` / `.database` | `""` / `foody` / `foody` | DSN aus Einzelteilen |
+| `externalDatabase.sslmode` | `require` | SSL-Modus für externen Postgres |
 | `migrations.enabled` | `true` | `prisma migrate deploy` initContainer |
 | `secrets.existingSecret` | `""` | Bestehendes Secret statt Klartext |
 | `ingress.enabled` | `true` | Ingress erzeugen |

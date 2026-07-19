@@ -1,7 +1,7 @@
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { env } from '$env/dynamic/private';
 import { PrismaClient } from './generated/prisma/client.js';
 
-const adapter = new PrismaBetterSqlite3({ url: env.DATABASE_URL ?? 'file:./foody.db' });
+const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 
 export const prisma = new PrismaClient({ adapter });

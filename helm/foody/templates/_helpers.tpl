@@ -65,16 +65,53 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-config" (include "foody.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{/* PVC name (chart-managed unless an existing claim is provided) */}}
-{{- define "foody.pvcName" -}}
-{{- if .Values.persistence.existingClaim }}
-{{- .Values.persistence.existingClaim }}
+{{/* Bundled Postgres component name */}}
+{{- define "foody.postgres.fullname" -}}
+{{- printf "%s-postgres" (include "foody.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/* Bundled Postgres secret name (chart-managed unless an existing secret is given) */}}
+{{- define "foody.postgres.secretName" -}}
+{{- if .Values.postgres.auth.existingSecret }}
+{{- .Values.postgres.auth.existingSecret }}
 {{- else }}
-{{- printf "%s-data" (include "foody.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- include "foody.postgres.fullname" . }}
 {{- end }}
 {{- end }}
 
-{{/* SQLite DATABASE_URL derived from the mount path + filename */}}
-{{- define "foody.databaseUrl" -}}
-{{- printf "file:%s/%s" (.Values.persistence.mountPath | trimSuffix "/") .Values.persistence.dbFilename }}
+{{/*
+DATABASE_URL env entries for the app container + migrate initContainer. Branch order:
+  1. postgres.enabled                          → bundled StatefulSet; password from chart secret.
+  2. externalDatabase.existingSecret + URL key → full DSN pulled straight from a Secret (e.g. CNPG "uri").
+  3. externalDatabase.existingSecret           → assembled DSN; password from a Secret key via $(VAR).
+  4. otherwise                                 → assembled DSN from parts, no secret.
+Renders cleanly with defaults so `helm template`/lint pass; a real deploy picks one of branches 1–3.
+*/}}
+{{- define "foody.databaseEnv" -}}
+{{- if .Values.postgres.enabled }}
+- name: POSTGRES_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "foody.postgres.secretName" . }}
+      key: password
+- name: DATABASE_URL
+  value: "postgresql://{{ .Values.postgres.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "foody.postgres.fullname" . }}:5432/{{ .Values.postgres.auth.database }}?schema=public"
+{{- else if and .Values.externalDatabase.existingSecret .Values.externalDatabase.existingSecretUrlKey }}
+- name: DATABASE_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.externalDatabase.existingSecret }}
+      key: {{ .Values.externalDatabase.existingSecretUrlKey }}
+{{- else if .Values.externalDatabase.existingSecret }}
+- name: POSTGRES_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.externalDatabase.existingSecret }}
+      key: {{ .Values.externalDatabase.existingSecretPasswordKey }}
+- name: DATABASE_URL
+  value: "postgresql://{{ .Values.externalDatabase.username }}:$(POSTGRES_PASSWORD)@{{ .Values.externalDatabase.host }}:{{ .Values.externalDatabase.port }}/{{ .Values.externalDatabase.database }}?sslmode={{ .Values.externalDatabase.sslmode }}"
+{{- else }}
+- name: DATABASE_URL
+  value: "postgresql://{{ .Values.externalDatabase.username }}@{{ .Values.externalDatabase.host }}:{{ .Values.externalDatabase.port }}/{{ .Values.externalDatabase.database }}?sslmode={{ .Values.externalDatabase.sslmode }}"
+{{- end }}
 {{- end }}
