@@ -13,7 +13,9 @@ export async function listRecipesWithPlanStatus(householdId: string) {
 		return {
 			...recipe,
 			planned: item?.selected ?? false,
-			plannedAt: item?.selectedAt ?? null
+			plannedAt: item?.selectedAt ?? null,
+			portions: item?.portions ?? 2,
+			declaredServings: recipe.declaredServings ?? null
 		};
 	});
 }
@@ -38,4 +40,30 @@ export async function togglePlanItem(householdId: string, recipeId: string): Pro
 		data: { householdId, recipeId, selected: true, selectedAt: new Date() }
 	});
 	return true;
+}
+
+export async function setPortions(
+	householdId: string,
+	recipeId: string,
+	portions: number
+): Promise<number> {
+	const truncated = Math.trunc(portions);
+	const clamped = Number.isFinite(truncated) ? Math.max(1, truncated) : 1;
+
+	const existing = await prisma.weeklyPlanItem.findUnique({
+		where: { householdId_recipeId: { householdId, recipeId } }
+	});
+
+	if (!existing) {
+		// A stepper only shows for selected items, so this shouldn't normally happen.
+		// Guard defensively by no-op'ing rather than creating an unselected item.
+		return clamped;
+	}
+
+	await prisma.weeklyPlanItem.update({
+		where: { id: existing.id },
+		data: { portions: clamped }
+	});
+
+	return clamped;
 }
