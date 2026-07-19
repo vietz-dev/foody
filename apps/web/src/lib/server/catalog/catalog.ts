@@ -64,23 +64,6 @@ export async function confirmIngredient(
 	});
 }
 
-/** Set the Vorrat (staple) flag on an ingredient. Scoped by householdId. */
-export async function setStaple(
-	householdId: string,
-	id: string,
-	isStaple: boolean
-): Promise<void> {
-	const existing = await prisma.ingredient.findUnique({ where: { id } });
-	if (!existing || existing.householdId !== householdId) {
-		throw new Error('Zutat nicht gefunden');
-	}
-
-	await prisma.ingredient.update({
-		where: { id },
-		data: { isStaple }
-	});
-}
-
 /**
  * Merge a source ingredient into a target ingredient: repoints all
  * RecipeIngredient rows from source to target, folds the source's canonical

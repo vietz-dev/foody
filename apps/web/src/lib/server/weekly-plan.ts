@@ -46,8 +46,9 @@ export async function setPortions(
 	householdId: string,
 	recipeId: string,
 	portions: number
-): Promise<void> {
-	const clamped = Math.max(1, Math.trunc(portions));
+): Promise<number> {
+	const truncated = Math.trunc(portions);
+	const clamped = Number.isFinite(truncated) ? Math.max(1, truncated) : 1;
 
 	const existing = await prisma.weeklyPlanItem.findUnique({
 		where: { householdId_recipeId: { householdId, recipeId } }
@@ -56,11 +57,13 @@ export async function setPortions(
 	if (!existing) {
 		// A stepper only shows for selected items, so this shouldn't normally happen.
 		// Guard defensively by no-op'ing rather than creating an unselected item.
-		return;
+		return clamped;
 	}
 
 	await prisma.weeklyPlanItem.update({
 		where: { id: existing.id },
 		data: { portions: clamped }
 	});
+
+	return clamped;
 }

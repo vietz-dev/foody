@@ -6,6 +6,12 @@
  * {@link normalizeIngredientName}) werden auf den existierenden Katalogeintrag
  * gemappt. Unbekannte Namen erzeugen genau einen neuen `pending`-Katalogeintrag,
  * der danach (auch innerhalb desselben Aufrufs) wiederverwendet wird.
+ *
+ * Grenze: Die Deduplizierung ist read-then-create und damit nur für
+ * sequentielle Schreibvorgänge garantiert. Zwei exakt gleichzeitige
+ * Rezept-Writes mit derselben neuen Zutat könnten je einen `pending`-Eintrag
+ * anlegen; solche seltenen Duplikate werden über den Review-/Merge-Flow in
+ * `/katalog` aufgeräumt (siehe Folge-Ticket zur DB-seitigen Absicherung).
  */
 
 import { prisma } from '$lib/server/prisma';
