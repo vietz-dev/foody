@@ -19,6 +19,19 @@
 	</Header>
 
 	<main class="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
+		{#if data.pendingIngredientCount > 0}
+			<a
+				href="/katalog"
+				class="mb-6 flex items-center justify-between gap-3 rounded-xl bg-surface-1 px-4 py-3 text-sm no-underline transition-colors hover:bg-surface-1/70"
+			>
+				<span class="text-primary">
+					{data.pendingIngredientCount}
+					{data.pendingIngredientCount === 1 ? 'Zutat wartet' : 'Zutaten warten'} auf Review
+				</span>
+				<span class="font-semibold text-brand">Zum Katalog →</span>
+			</a>
+		{/if}
+
 		{#if data.recipes.length === 0}
 			<div class="flex flex-col items-center justify-center py-16 text-center">
 				<p class="m-0 mb-4 text-[15px] text-secondary">Noch keine Rezepte vorhanden.</p>

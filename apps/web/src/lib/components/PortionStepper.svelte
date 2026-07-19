@@ -1,13 +1,20 @@
 <script lang="ts">
 	import { NumberInput } from '@ark-ui/svelte';
 
-	let { value = $bindable(1), min = 1 }: { value?: number; min?: number } = $props();
+	let {
+		value = $bindable(1),
+		min = 1,
+		onchange
+	}: { value?: number; min?: number; onchange?: (value: number) => void } = $props();
 </script>
 
 <NumberInput.Root
 	value={String(value)}
 	{min}
-	onValueChange={(details) => (value = details.valueAsNumber || min)}
+	onValueChange={(details) => {
+		value = details.valueAsNumber || min;
+		onchange?.(value);
+	}}
 	class="inline-flex items-center gap-3"
 >
 	<NumberInput.DecrementTrigger
