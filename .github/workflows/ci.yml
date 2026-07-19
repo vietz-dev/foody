@@ -27,14 +27,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The Prisma client is generated into the app source and imported by it,
-      # and `svelte-kit sync` writes the tsconfig the app extends — both must
-      # run before type-check/build, mirroring the Dockerfile build order.
-      - name: Generate Prisma client
-        run: pnpm --filter web exec prisma generate
-
+      # `svelte-kit sync` writes .svelte-kit/tsconfig.json, which the app
+      # tsconfig extends — the Prisma `prisma-client` generator reads it, so
+      # sync MUST run before generate. Both run before type-check/build,
+      # mirroring the Dockerfile build order.
       - name: Sync SvelteKit
         run: pnpm --filter web exec svelte-kit sync
+
+      - name: Generate Prisma client
+        run: pnpm --filter web exec prisma generate
 
       - name: Type check
         run: pnpm --filter web run check-types
