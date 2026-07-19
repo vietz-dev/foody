@@ -1,7 +1,10 @@
 /**
  * AI-gestützte Zusammenführungs-Vorschläge für den Zutaten-Katalog: für jeden
  * offenen (pending) Zutatennamen wird geprüft, ob er eine offensichtliche
- * Variante/Synonym/Schreibweise eines bereits bestätigten Katalog-Eintrags ist.
+ * Variante/Synonym/Schreibweise eines anderen Katalog-Eintrags ist. Die
+ * Kandidatenliste kann sowohl bestätigte als auch andere offene Zutaten
+ * enthalten — so bekommt auch ein frischer Backfill (bei dem noch nichts
+ * bestätigt ist) Gruppierungsvorschläge zwischen den offenen Einträgen.
  */
 
 import { createAnthropic } from '@ai-sdk/anthropic';
@@ -18,12 +21,14 @@ const anthropic = createAnthropic({
 const SuggestionSchema = z.object({
 	suggestions: z.array(
 		z.object({
-			pendingName: z.string().describe('Der offene Zutatenname aus der Eingabeliste (exakt übernommen)'),
+			pendingName: z
+				.string()
+				.describe('Der offene Zutatenname aus der Eingabeliste (exakt übernommen)'),
 			matchedConfirmedName: z
 				.string()
 				.nullable()
 				.describe(
-					'Der exakt passende Name aus der Liste bestätigter Zutaten, falls der offene Name eine ' +
+					'Der exakt passende Name aus der Kandidatenliste, falls der offene Name eine ' +
 						'offensichtliche Variante/Synonym/andere Schreibweise davon ist — sonst null'
 				)
 		})
@@ -31,24 +36,26 @@ const SuggestionSchema = z.object({
 });
 
 /**
- * Für jeden `pendingNames`-Eintrag wird der beste passende Namen aus
- * `confirmedNames` vorgeschlagen (oder `null`, wenn keiner passt). Nur Namen,
- * die tatsächlich in `confirmedNames` enthalten sind, werden vorgeschlagen.
+ * Für jeden `pendingNames`-Eintrag wird der beste passende Name aus
+ * `candidateNames` vorgeschlagen (oder `null`, wenn keiner passt). Kandidaten
+ * können bestätigte UND andere offene Zutaten sein; ein Name wird nie sich
+ * selbst zugeordnet. Nur Namen, die tatsächlich in `candidateNames` enthalten
+ * sind, werden vorgeschlagen.
  *
- * Defensiv: leere `confirmedNames` → alle `null` ohne AI-Aufruf; ein
- * fehlschlagender AI-Aufruf wird abgefangen und degradiert zu "keine
- * Vorschläge" statt die Seite crashen zu lassen.
+ * Defensiv: leere `candidateNames` → alle `null` ohne AI-Aufruf; ein
+ * fehlschlagender AI-Aufruf wird abgefangen (und geloggt) und degradiert zu
+ * "keine Vorschläge" statt die Seite crashen zu lassen.
  */
 export async function suggestMergeTargets(
 	pendingNames: string[],
-	confirmedNames: string[]
+	candidateNames: string[]
 ): Promise<Map<string, string | null>> {
 	const result = new Map<string, string | null>();
 	for (const name of pendingNames) {
 		result.set(name, null);
 	}
 
-	if (pendingNames.length === 0 || confirmedNames.length === 0) {
+	if (pendingNames.length === 0 || candidateNames.length === 0) {
 		return result;
 	}
 
@@ -59,33 +66,36 @@ export async function suggestMergeTargets(
 			messages: [
 				{
 					role: 'user',
-					content: `Du hilfst dabei, einen Zutaten-Katalog zu pflegen. Hier ist eine Liste "offener" (noch nicht bestätigter) Zutatennamen und eine Liste bereits bestätigter, kanonischer Zutatennamen.
+					content: `Du hilfst dabei, einen Zutaten-Katalog zu pflegen. Hier ist eine Liste "offener" (noch nicht bestätigter) Zutatennamen und eine Liste möglicher Ziel-Zutaten (bestätigte oder andere offene Einträge), in die zusammengeführt werden könnte.
 
-Prüfe für jeden offenen Namen, ob er eine offensichtliche Variante, ein Synonym oder eine andere Schreibweise EINES der bestätigten Namen ist (z.B. "Zwiebel"/"Zwiebeln", "Tomate"/"Tomaten", "Paprikaschote"/"Paprika"). Schlage NUR einen bestätigten Namen vor, wenn du dir wirklich sicher bist, dass es sich um dieselbe reale Zutat handelt. Wenn kein bestätigter Name eindeutig passt, gib null zurück.
+Prüfe für jeden offenen Namen, ob er eine offensichtliche Variante, ein Synonym oder eine andere Schreibweise EINES der Kandidaten ist (z.B. "Zwiebel"/"Zwiebeln", "Tomate"/"Tomaten", "Paprikaschote"/"Paprika"). Schlage NUR einen Kandidaten vor, wenn du dir wirklich sicher bist, dass es sich um dieselbe reale Zutat handelt. Wenn kein Kandidat eindeutig passt, gib null zurück. Ordne einen Namen niemals sich selbst zu.
 
-Der vorgeschlagene "matchedConfirmedName" MUSS exakt (Zeichen für Zeichen) einem der Namen aus der Liste bestätigter Zutaten entsprechen.
+Der vorgeschlagene "matchedConfirmedName" MUSS exakt (Zeichen für Zeichen) einem der Namen aus der Kandidatenliste entsprechen.
 
 Offene Zutatennamen:
 ${pendingNames.map((n) => `- ${n}`).join('\n')}
 
-Bestätigte Zutatennamen:
-${confirmedNames.map((n) => `- ${n}`).join('\n')}
+Mögliche Ziel-Zutaten:
+${candidateNames.map((n) => `- ${n}`).join('\n')}
 
 Antworte mit genau einem Eintrag pro offenem Zutatennamen.`
 				}
 			]
 		});
 
-		const confirmedSet = new Set(confirmedNames);
+		const candidateSet = new Set(candidateNames);
 		for (const suggestion of object.suggestions) {
 			if (!result.has(suggestion.pendingName)) continue;
 			const matched = suggestion.matchedConfirmedName;
-			if (matched && confirmedSet.has(matched)) {
+			// Never suggest a name as a match for itself.
+			if (matched && matched !== suggestion.pendingName && candidateSet.has(matched)) {
 				result.set(suggestion.pendingName, matched);
 			}
 		}
-	} catch {
-		// AI call failed — degrade gracefully to "no suggestions".
+	} catch (err) {
+		// AI call failed — degrade gracefully to "no suggestions", but log so a
+		// misconfiguration (e.g. bad API key/model) is visible instead of silent.
+		console.error('[ingredient-grouping] suggestMergeTargets failed:', err);
 	}
 
 	return result;

@@ -3,8 +3,7 @@ import {
 	confirmIngredient,
 	listConfirmedIngredients,
 	listPendingIngredients,
-	mergeIngredient,
-	setStaple
+	mergeIngredient
 } from '$lib/server/catalog/catalog';
 import { suggestMergeTargets } from '$lib/server/ai/ingredient-grouping';
 import { requireUser } from '$lib/server/require-user';
@@ -18,17 +17,35 @@ export const load: PageServerLoad = async ({ locals }) => {
 		listConfirmedIngredients(user.householdId)
 	]);
 
+	// Candidates for a merge suggestion are the confirmed entries AND the other
+	// pending entries — so a fresh backfill (nothing confirmed yet) still gets
+	// grouping proposals between the pending duplicates. Resolve a suggested
+	// name back to an ingredient, preferring a confirmed target on name clashes.
+	const candidateNames = [...confirmed.map((c) => c.name), ...pending.map((p) => p.name)];
+	const confirmedIds = new Set(confirmed.map((c) => c.id));
+	const targetByName = new Map<string, { id: string; name: string }>();
+	for (const entry of [...pending, ...confirmed]) {
+		targetByName.set(entry.name, { id: entry.id, name: entry.name }); // confirmed overwrites pending
+	}
+
 	const suggestionMap = await suggestMergeTargets(
 		pending.map((p) => p.name),
-		confirmed.map((c) => c.name)
+		candidateNames
 	);
 
-	const confirmedByName = new Map(confirmed.map((c) => [c.name, c]));
 	const suggestions = Object.fromEntries(
 		pending.map((p) => {
 			const matchedName = suggestionMap.get(p.name) ?? null;
-			const target = matchedName ? (confirmedByName.get(matchedName) ?? null) : null;
-			return [p.id, target ? { id: target.id, name: target.name } : null];
+			const target = matchedName ? (targetByName.get(matchedName) ?? null) : null;
+			if (!target || target.id === p.id) return [p.id, null];
+			// For pending→pending pairs, keep only one canonical direction (merge
+			// the alphabetically-later name into the earlier one) so the AI can't
+			// surface a mutual A→B / B→A suggestion on both rows. A confirmed
+			// target is always a valid direction.
+			if (!confirmedIds.has(target.id) && p.name.localeCompare(target.name) <= 0) {
+				return [p.id, null];
+			}
+			return [p.id, target];
 		})
 	);
 
@@ -66,23 +83,6 @@ export const actions: Actions = {
 			await mergeIngredient(user.householdId, sourceId, targetId);
 		} catch {
 			return fail(400, { error: 'Zutaten konnten nicht zusammengeführt werden' });
-		}
-
-		return { success: true };
-	},
-
-	setStaple: async ({ request, locals }) => {
-		const user = requireUser(locals);
-		const formData = await request.formData();
-		const id = formData.get('id') as string | null;
-		const isStaple = formData.get('isStaple') === 'on';
-
-		if (!id) return fail(400, { error: 'Fehlende ID' });
-
-		try {
-			await setStaple(user.householdId, id, isStaple);
-		} catch {
-			return fail(400, { error: 'Vorrat-Status konnte nicht gesetzt werden' });
 		}
 
 		return { success: true };
