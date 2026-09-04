@@ -27,13 +27,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # `svelte-kit sync` writes .svelte-kit/tsconfig.json, which the app
-      # tsconfig extends — the Prisma `prisma-client` generator reads it, so
-      # sync MUST run before generate. Both run before type-check/build,
-      # mirroring the Dockerfile build order.
-      - name: Sync SvelteKit
-        run: pnpm --filter web exec svelte-kit sync
-
       - name: Generate Prisma client
         run: pnpm --filter web exec prisma generate
 
@@ -42,6 +35,10 @@ jobs:
 
       - name: Build
         run: pnpm --filter web run build
+        env:
+          # The auth route is initialized while Next.js collects build-time
+          # route metadata. A non-production value is sufficient in CI.
+          BETTER_AUTH_SECRET: ci-build-secret
 
   lint-helm:
     name: Lint Helm Chart
