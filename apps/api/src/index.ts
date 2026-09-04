@@ -2,8 +2,8 @@ import { serve } from '@hono/node-server';
 import { RPCHandler } from '@orpc/server/fetch';
 import { implement, onError } from '@orpc/server';
 import { Hono } from 'hono';
-import { Effect, ManagedRuntime } from 'effect';
 import { contract } from '@foody/contracts';
+import { createHonoEffectRuntime } from '@foody/hono-effect';
 import { AppLive } from './dependencies/runtime-deps.js';
 import { CatalogService } from './services/catalog/service.js';
 import { PlanService } from './services/plan/service.js';
@@ -13,67 +13,64 @@ import { ShoppingListService } from './services/shoppingList/service.js';
 export type Context = { householdId: string };
 export type ContextResolver = (request: Request) => Promise<Context | null>;
 const os = implement<typeof contract, Context>(contract);
-const runtime = ManagedRuntime.make(AppLive);
-const run = <A>(program: Effect.Effect<A, unknown, any>) => runtime.runPromise(program);
-const service = (tag: any, call: (value: any) => Effect.Effect<any, unknown>) =>
-  Effect.flatMap(tag, call);
+const { runService } = createHonoEffectRuntime(AppLive);
 
 const router = os.router({
   recipes: {
     list: os.recipes.list.handler(({ context }) =>
-      run(service(RecipeService, (s) => s.list(context.householdId)))
+      runService(RecipeService, (service) => service.list(context.householdId))
     ),
     get: os.recipes.get.handler(({ input, context }) =>
-      run(service(RecipeService, (s) => s.get(context.householdId, input.id)))
+      runService(RecipeService, (service) => service.get(context.householdId, input.id))
     ),
     create: os.recipes.create.handler(({ input, context }) =>
-      run(service(RecipeService, (s) => s.create(context.householdId, input)))
+      runService(RecipeService, (service) => service.create(context.householdId, input))
     ),
     update: os.recipes.update.handler(({ input, context }) =>
-      run(service(RecipeService, (s) => s.update(context.householdId, input.id, input)))
+      runService(RecipeService, (service) => service.update(context.householdId, input.id, input))
     ),
     delete: os.recipes.delete.handler(({ input, context }) =>
-      run(service(RecipeService, (s) => s.delete(context.householdId, input.id)))
+      runService(RecipeService, (service) => service.delete(context.householdId, input.id))
     ),
     scan: os.recipes.scan.handler(async () => ({}))
   },
   plan: {
     list: os.plan.list.handler(({ context }) =>
-      run(service(PlanService, (s) => s.list(context.householdId)))
+      runService(PlanService, (service) => service.list(context.householdId))
     ),
     toggle: os.plan.toggle.handler(({ input, context }) =>
-      run(service(PlanService, (s) => s.toggle(context.householdId, input.recipeId)))
+      runService(PlanService, (service) => service.toggle(context.householdId, input.recipeId))
     ),
     setPortions: os.plan.setPortions.handler(({ input, context }) =>
-      run(
-        service(PlanService, (s) => s.portions(context.householdId, input.recipeId, input.portions))
+      runService(PlanService, (service) =>
+        service.portions(context.householdId, input.recipeId, input.portions)
       )
     )
   },
   shoppingList: {
     get: os.shoppingList.get.handler(({ context }) =>
-      run(service(ShoppingListService, (s) => s.get(context.householdId)))
+      runService(ShoppingListService, (service) => service.get(context.householdId))
     )
   },
   catalog: {
     list: os.catalog.list.handler(({ context }) =>
-      run(service(CatalogService, (s) => s.list(context.householdId)))
+      runService(CatalogService, (service) => service.list(context.householdId))
     ),
     confirm: os.catalog.confirm.handler(({ input, context }) =>
-      run(service(CatalogService, (s) => s.confirm(context.householdId, input.id, input)))
+      runService(CatalogService, (service) => service.confirm(context.householdId, input.id, input))
     ),
     merge: os.catalog.merge.handler(({ input, context }) =>
-      run(
-        service(CatalogService, (s) => s.merge(context.householdId, input.sourceId, input.targetId))
+      runService(CatalogService, (service) =>
+        service.merge(context.householdId, input.sourceId, input.targetId)
       )
     )
   },
   admin: {
     overview: os.admin.overview.handler(({ context }) =>
-      run(service(CatalogService, (s) => s.overview(context.householdId)))
+      runService(CatalogService, (service) => service.overview(context.householdId))
     ),
     backfill: os.admin.backfill.handler(({ context }) =>
-      run(service(CatalogService, (s) => s.backfill(context.householdId)))
+      runService(CatalogService, (service) => service.backfill(context.householdId))
     )
   }
 });

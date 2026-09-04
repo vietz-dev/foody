@@ -1,0 +1,9 @@
+{
+  "extends": "@repo/typescript-config/svelte.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
+}
