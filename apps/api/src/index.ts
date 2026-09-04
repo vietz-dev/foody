@@ -2,54 +2,81 @@ import { serve } from '@hono/node-server';
 import { RPCHandler } from '@orpc/server/fetch';
 import { implement, onError } from '@orpc/server';
 import { Hono } from 'hono';
+import { Effect, ManagedRuntime } from 'effect';
 import { contract } from '@foody/contracts';
+import {
+  AppLive,
+  CatalogService,
+  PlanService,
+  RecipeService,
+  ShoppingListService
+} from './services.js';
 
-/**
- * API entry point. Business handlers are intentionally injected here, so the
- * web app only needs the contract and never imports database/AI code.
- * Replace the temporary not-implemented handlers as domain modules migrate.
- */
 export type Context = { householdId: string };
 export type ContextResolver = (request: Request) => Promise<Context | null>;
 const os = implement<typeof contract, Context>(contract);
+const runtime = ManagedRuntime.make(AppLive);
+const run = <A>(program: Effect.Effect<A, unknown, any>) => runtime.runPromise(program);
+const service = (tag: any, call: (value: any) => Effect.Effect<any, unknown>) =>
+  Effect.flatMap(tag, call);
+
 const router = os.router({
   recipes: {
-    list: os.recipes.list.handler(async () => []),
-    get: os.recipes.get.handler(async () => null),
-    create: os.recipes.create.handler(async () => {
-      throw new Error('Recipe service is not configured');
-    }),
-    update: os.recipes.update.handler(async () => ({ success: true })),
-    delete: os.recipes.delete.handler(async () => ({ success: true })),
+    list: os.recipes.list.handler(({ context }) =>
+      run(service(RecipeService, (s) => s.list(context.householdId)))
+    ),
+    get: os.recipes.get.handler(({ input, context }) =>
+      run(service(RecipeService, (s) => s.get(context.householdId, input.id)))
+    ),
+    create: os.recipes.create.handler(({ input, context }) =>
+      run(service(RecipeService, (s) => s.create(context.householdId, input)))
+    ),
+    update: os.recipes.update.handler(({ input, context }) =>
+      run(service(RecipeService, (s) => s.update(context.householdId, input.id, input)))
+    ),
+    delete: os.recipes.delete.handler(({ input, context }) =>
+      run(service(RecipeService, (s) => s.delete(context.householdId, input.id)))
+    ),
     scan: os.recipes.scan.handler(async () => ({}))
   },
   plan: {
-    list: os.plan.list.handler(async () => []),
-    toggle: os.plan.toggle.handler(async () => ({ selected: false })),
-    setPortions: os.plan.setPortions.handler(async () => ({ portions: 1 }))
+    list: os.plan.list.handler(({ context }) =>
+      run(service(PlanService, (s) => s.list(context.householdId)))
+    ),
+    toggle: os.plan.toggle.handler(({ input, context }) =>
+      run(service(PlanService, (s) => s.toggle(context.householdId, input.recipeId)))
+    ),
+    setPortions: os.plan.setPortions.handler(({ input, context }) =>
+      run(
+        service(PlanService, (s) => s.portions(context.householdId, input.recipeId, input.portions))
+      )
+    )
   },
   shoppingList: {
-    get: os.shoppingList.get.handler(async () => ({
-      einkaufen: [],
-      vorrat: [],
-      nichtZugeordnet: []
-    }))
+    get: os.shoppingList.get.handler(({ context }) =>
+      run(service(ShoppingListService, (s) => s.get(context.householdId)))
+    )
   },
   catalog: {
-    list: os.catalog.list.handler(async () => ({ pending: [], confirmed: [], suggestions: {} })),
-    confirm: os.catalog.confirm.handler(async () => ({ success: true })),
-    merge: os.catalog.merge.handler(async () => ({ success: true }))
+    list: os.catalog.list.handler(({ context }) =>
+      run(service(CatalogService, (s) => s.list(context.householdId)))
+    ),
+    confirm: os.catalog.confirm.handler(({ input, context }) =>
+      run(service(CatalogService, (s) => s.confirm(context.householdId, input.id, input)))
+    ),
+    merge: os.catalog.merge.handler(({ input, context }) =>
+      run(
+        service(CatalogService, (s) => s.merge(context.householdId, input.sourceId, input.targetId))
+      )
+    )
   },
   admin: {
-    overview: os.admin.overview.handler(async () => ({
-      defaultServingRecipes: [],
-      pendingCount: 0
-    })),
-    backfill: os.admin.backfill.handler(async () => ({
-      success: true,
-      linkedCount: 0,
-      pendingCount: 0
-    }))
+    overview: os.admin.overview.handler(({ context }) =>
+      run(service(CatalogService, (s) => s.overview(context.householdId)))
+    ),
+    backfill: os.admin.backfill.handler(({ context }) =>
+      run(service(CatalogService, (s) => s.backfill(context.householdId)))
+    )
   }
 });
 
@@ -58,7 +85,6 @@ export function createApp(resolveContext: ContextResolver = async () => null) {
   const handler = new RPCHandler(router, {
     interceptors: [onError((error) => console.error(error))]
   });
-
   app.get('/health', (c) => c.json({ status: 'ok' }));
   app.use('/rpc/*', async (c, next) => {
     const context = await resolveContext(c.req.raw);
@@ -71,8 +97,6 @@ export function createApp(resolveContext: ContextResolver = async () => null) {
 }
 
 const app = createApp();
-
 export default app;
-
 if (process.env.NODE_ENV !== 'test')
   serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3000) });

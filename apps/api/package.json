@@ -14,12 +14,13 @@
     "@orpc/server": "^1.15.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "effect": "^3.19.0",
     "hono": "^4.13.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
     "@hono/node-server": "^1.19.11",
+    "@repo/typescript-config": "workspace:*",
     "@types/node": "^24.12.0",
     "tsx": "^4.20.6",
     "typescript": "5.9.3"

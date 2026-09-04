@@ -36,3 +36,4 @@ yarn-error.log*
 .turbo
 
 dist
+/apps/api/src/generated/prisma
