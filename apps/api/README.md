@@ -9,6 +9,8 @@ default export deliberately rejects RPC requests until the deployment wires
 its Better Auth session resolver; no household identifier is accepted from an
 untrusted client header.
 
-The domain handlers are the migration seam for moving the existing SvelteKit
-server modules out of `apps/web`. Once wired, the web app imports only the
-typed client from `src/lib/api-client.ts`.
+The API uses Effect layers for dependency injection. Prisma is created once as
+a scoped `PrismaService`, repositories contain database access, and services
+contain the household-scoped business logic. The Hono/oRPC handlers only run
+the service effects through the managed runtime. Generate the Prisma client
+from `apps/web` before building (`pnpm --filter web exec prisma generate`).
