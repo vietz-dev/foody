@@ -11,9 +11,10 @@ untrusted client header.
 
 The API uses Effect layers for dependency injection. Prisma is created once as
 a scoped `PrismaService`, repositories contain database access, and services
-contain the household-scoped business logic. The Hono/oRPC handlers only run
-the service effects through the managed runtime. Generate the Prisma client
-from `apps/web` before building (`pnpm --filter web exec prisma generate`).
+contain the household-scoped business logic. The Hono/oRPC handlers execute
+service effects through the managed runtime adapter from `@foody/hono-effect`.
+Generate the Prisma client from `apps/web` before building
+(`pnpm --filter web exec prisma generate`).
 
 Database modules live below `src/repositories`, while household-scoped business
 logic lives below `src/services`. Each repository and service has its own module

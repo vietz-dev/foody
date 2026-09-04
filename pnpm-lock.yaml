@@ -29,6 +29,9 @@ importers:
       '@foody/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@foody/hono-effect':
+        specifier: workspace:*
+        version: link:../../packages/hono-effect
       '@orpc/server':
         specifier: ^1.15.0
         version: 1.15.0(ws@8.20.0)
@@ -291,6 +294,22 @@ importers:
       typescript-eslint:
         specifier: ^8.57.1
         version: 8.57.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+
+  packages/hono-effect:
+    dependencies:
+      effect:
+        specifier: ^3.19.0
+        version: 3.20.0
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.0(@types/node@24.12.0)(@vitest/browser-playwright@4.1.0)(vite@8.0.1(@types/node@24.12.0)(esbuild@0.27.7)(jiti@2.7.0)(tsx@4.23.13))
 
   packages/typescript-config: {}
 

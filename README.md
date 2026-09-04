@@ -23,6 +23,11 @@ This Turborepo includes the following packages/apps:
 
 ### Packages
 
+#### `hono-effect`
+
+A typed managed-runtime adapter for executing Effect programs and services from
+Hono/oRPC request handlers.
+
 #### `eslint-config`
 
 `eslint` configurations (includes `eslint-plugin-svelte` and `eslint-config-prettier`)
