@@ -10,7 +10,7 @@ import {
   PlanService,
   RecipeService,
   ShoppingListService
-} from './services.js';
+} from './domains/index.js';
 
 export type Context = { householdId: string };
 export type ContextResolver = (request: Request) => Promise<Context | null>;

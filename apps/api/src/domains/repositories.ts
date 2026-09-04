@@ -1,5 +1,5 @@
 import { Context, Effect, Layer } from 'effect';
-import { PrismaService } from './db.js';
+import { PrismaService } from '../infrastructure/prisma.js';
 
 export class RecipeRepository extends Context.Tag('RecipeRepository')<
   RecipeRepository,
@@ -69,7 +69,7 @@ export const RecipeRepositoryLive = Layer.effect(
       update: (householdId, id, data) =>
         Effect.tryPromise(() =>
           db
-            .$transaction(async (tx) => {
+            .$transaction(async (tx: any) => {
               const recipe = await tx.recipe.findFirstOrThrow({ where: { id, householdId } });
               const ingredientIds = await resolveIngredientIds(
                 tx,
@@ -141,8 +141,8 @@ export const PlanRepositoryLive = Layer.effect(
             db.recipe.findMany({ where: { householdId }, orderBy: { name: 'asc' } }),
             db.weeklyPlanItem.findMany({ where: { householdId } })
           ]);
-          const map = new Map(items.map((i) => [i.recipeId, i]));
-          return recipes.map((r) => ({
+          const map = new Map(items.map((i: any) => [i.recipeId, i]));
+          return recipes.map((r: any) => ({
             ...r,
             planned: map.get(r.id)?.selected ?? false,
             plannedAt: map.get(r.id)?.selectedAt ?? null,
@@ -241,8 +241,8 @@ export const CatalogRepositoryLive = Layer.effect(
         Effect.tryPromise(async () => {
           const all = await entries(householdId);
           return {
-            pending: all.filter((x) => x.status === 'pending'),
-            confirmed: all.filter((x) => x.status === 'confirmed'),
+            pending: all.filter((x: any) => x.status === 'pending'),
+            confirmed: all.filter((x: any) => x.status === 'confirmed'),
             suggestions: {}
           };
         }),
@@ -272,7 +272,7 @@ export const CatalogRepositoryLive = Layer.effect(
       merge: (householdId, sourceId, targetId) =>
         Effect.tryPromise(() =>
           db
-            .$transaction(async (tx) => {
+            .$transaction(async (tx: any) => {
               const [source, target] = await Promise.all([
                 tx.ingredient.findFirstOrThrow({ where: { id: sourceId, householdId } }),
                 tx.ingredient.findFirstOrThrow({ where: { id: targetId, householdId } })
@@ -307,7 +307,8 @@ export const CatalogRepositoryLive = Layer.effect(
           for (const row of rows) {
             const key = normalize(row.name);
             let match = all.find(
-              (x) => normalize(x.name) === key || x.aliases.some((a) => normalize(a) === key)
+              (x: any) =>
+                normalize(x.name) === key || x.aliases.some((a: string) => normalize(a) === key)
             );
             if (!match && key) {
               match = await db.ingredient.create({
@@ -323,7 +324,10 @@ export const CatalogRepositoryLive = Layer.effect(
               linkedCount++;
             }
           }
-          return { linkedCount, pendingCount: all.filter((x) => x.status === 'pending').length };
+          return {
+            linkedCount,
+            pendingCount: all.filter((x: any) => x.status === 'pending').length
+          };
         })
     });
   })
@@ -347,7 +351,7 @@ export const ShoppingRepositoryLive = Layer.effect(
             }),
             db.ingredient.findMany({ where: { householdId } })
           ]);
-          const byId = new Map(catalog.map((x) => [x.id, x]));
+          const byId = new Map(catalog.map((x: any) => [x.id, x]));
           const result = {
             einkaufen: [] as any[],
             vorrat: [] as any[],
