@@ -1,7 +1,7 @@
 # =============================================================================
 # Foody Helm values
 #
-# Foody is a self-hosted SvelteKit server (adapter-node) backed by PostgreSQL.
+# Foody is a self-hosted Next.js server backed by PostgreSQL.
 # Point it at a Postgres via one of:
 #   * postgres.enabled=true        → a bundled single-node Postgres StatefulSet
 #                                     (quick start; fine for a single household).
@@ -137,14 +137,11 @@ externalDatabase:
 
 # --- Configuration (non-sensitive → ConfigMap) ---
 config:
-  # Public URL guests use to reach Foody. Drives both the SvelteKit adapter-node
-  # ORIGIN check (required for form actions/POST behind a proxy) and the
-  # better-auth base URL. MUST match the ingress host + scheme.
+  # Public URL guests use to reach Foody. This is the better-auth base URL and
+  # MUST match the ingress host and scheme.
   appUrl: "https://foody.local"
   # Pocket ID / generic OIDC issuer (discovery at <issuer>/.well-known/openid-configuration).
   oidcIssuer: "https://auth.vietz.dev"
-  # adapter-node request body limit — raised for multi-photo book scans.
-  bodySizeLimit: "20M"
 
 # --- Secrets (sensitive → Kubernetes Secret) ---
 # For production, create the Secret manually and set existingSecret. Otherwise
