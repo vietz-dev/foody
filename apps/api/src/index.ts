@@ -4,13 +4,11 @@ import { implement, onError } from '@orpc/server';
 import { Hono } from 'hono';
 import { Effect, ManagedRuntime } from 'effect';
 import { contract } from '@foody/contracts';
-import {
-  AppLive,
-  CatalogService,
-  PlanService,
-  RecipeService,
-  ShoppingListService
-} from './domains/index.js';
+import { AppLive } from './dependencies/runtime-deps.js';
+import { CatalogService } from './services/catalog/service.js';
+import { PlanService } from './services/plan/service.js';
+import { RecipeService } from './services/recipe/service.js';
+import { ShoppingListService } from './services/shoppingList/service.js';
 
 export type Context = { householdId: string };
 export type ContextResolver = (request: Request) => Promise<Context | null>;

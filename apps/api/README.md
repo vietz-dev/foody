@@ -15,7 +15,9 @@ contain the household-scoped business logic. The Hono/oRPC handlers only run
 the service effects through the managed runtime. Generate the Prisma client
 from `apps/web` before building (`pnpm --filter web exec prisma generate`).
 
-Domain code lives below `src/domains`: `recipes`, `planning`, `catalog`, and
-`shopping-list` each expose a repository port/implementation and a service.
-`src/infrastructure` contains Prisma wiring; `src/index.ts` only composes the
-runtime and transports requests.
+Database modules live below `src/repositories`, while household-scoped business
+logic lives below `src/services`. Each repository and service has its own module
+directory with purpose-specific files such as `repository.ts` or `service.ts`,
+`types.ts`, `errors.ts`, `internal.ts`, and `deps.ts`. `src/dependencies`
+composes the runtime, `src/infrastructure` contains Prisma wiring, and
+`src/index.ts` only defines the transport boundary.
