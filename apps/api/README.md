@@ -14,3 +14,8 @@ a scoped `PrismaService`, repositories contain database access, and services
 contain the household-scoped business logic. The Hono/oRPC handlers only run
 the service effects through the managed runtime. Generate the Prisma client
 from `apps/web` before building (`pnpm --filter web exec prisma generate`).
+
+Domain code lives below `src/domains`: `recipes`, `planning`, `catalog`, and
+`shopping-list` each expose a repository port/implementation and a service.
+`src/infrastructure` contains Prisma wiring; `src/index.ts` only composes the
+runtime and transports requests.

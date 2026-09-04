@@ -1,6 +1,5 @@
 import { Context, Effect, Layer } from 'effect';
 import type { RecipeInput } from '@foody/contracts';
-import { PrismaLive } from './db.js';
 import {
   CatalogRepository,
   CatalogRepositoryLive,
@@ -148,20 +147,4 @@ export const ShoppingListServiceLive = Layer.effect(
     const repository = yield* ShoppingRepository;
     return ShoppingListService.of({ get: (h) => repository.get(h) });
   })
-);
-
-export const AppLive = Layer.mergeAll(
-  RecipeServiceLive,
-  PlanServiceLive,
-  CatalogServiceLive,
-  ShoppingListServiceLive
-).pipe(
-  Layer.provide(
-    Layer.mergeAll(
-      RecipeRepositoryLive,
-      PlanRepositoryLive,
-      CatalogRepositoryLive,
-      ShoppingRepositoryLive
-    ).pipe(Layer.provide(PrismaLive))
-  )
 );
