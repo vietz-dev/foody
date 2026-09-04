@@ -37,17 +37,6 @@
   ],
   "exclude": [
     "node_modules",
-    ".next",
-    "src/routes",
-    "src/hooks.server.ts",
-    "src/lib/server/auth.ts",
-    "src/lib/server/ai",
-    "src/lib/server/catalog",
-    "src/lib/server/recipes.ts",
-    "src/lib/server/weekly-plan.ts",
-    "src/lib/server/shopping-list",
-    "playwright.config.ts",
-    "vite.config.ts",
-    "svelte.config.js"
+    ".next"
   ]
 }

@@ -2,7 +2,7 @@
 
 Self-Hosting von **Foody** (KI-gestützte Essensplanung) im Kubernetes-Cluster.
 
-Foody ist ein SvelteKit-Server (`adapter-node`, Port 3000) mit einer
+Foody ist ein Next.js-Server (Port 3000) mit einer
 **PostgreSQL**-Datenbank (Prisma + `pg`-Treiber). Der App-Prozess ist zustandslos:
 
 - **Stateless App** — skaliert und rollt normal (RollingUpdate). Der gesamte
@@ -76,8 +76,8 @@ postgres:
     storageClass: ""     # leer = Default-StorageClass des Clusters
 ```
 
-`config.appUrl` **muss** exakt der öffentlichen URL entsprechen (SvelteKit-
-ORIGIN-Check für Formular-POSTs + better-auth/OIDC-Callbacks). Die Pocket-ID-
+`config.appUrl` **muss** exakt der öffentlichen URL entsprechen (better-auth/OIDC-
+Callbacks). Die Pocket-ID-
 Redirect-URI muss `https://foody.example.com/api/auth/oauth2/callback/pocket-id`
 enthalten.
 
@@ -120,9 +120,8 @@ Bei externem Postgres/CNPG entsprechend die Backup-Mechanismen des Operators nut
 | Key | Default | Zweck |
 |-----|---------|-------|
 | `image.repository` / `image.tag` | `ghcr.io/OWNER/foody` / appVersion | Container-Image |
-| `config.appUrl` | `https://foody.local` | Öffentliche URL (ORIGIN + auth) |
+| `config.appUrl` | `https://foody.local` | Öffentliche URL für better-auth |
 | `config.oidcIssuer` | `https://auth.vietz.dev` | OIDC-Issuer (Pocket ID) |
-| `config.bodySizeLimit` | `20M` | Upload-Limit (Buchfoto-Scans) |
 | `postgres.enabled` | `false` | Gebündeltes Postgres-StatefulSet deployen |
 | `postgres.auth.password` / `.existingSecret` | `""` | Passwort für gebündeltes Postgres |
 | `postgres.persistence.size` | `8Gi` | Volume-Größe des gebündelten Postgres |

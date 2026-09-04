@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ============================================================================
-# Foody — SvelteKit (adapter-node) + Prisma + PostgreSQL (pg driver)
+# Foody — Next.js + Prisma + PostgreSQL (pg driver)
 # Monorepo build: context must be the repository root.
 #   docker build -t ghcr.io/OWNER/foody:<tag> .
 # ============================================================================
@@ -29,20 +29,15 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 
-# App source, then build. Order matters:
-#   1. `svelte-kit sync` writes apps/web/.svelte-kit/tsconfig.json, which the
-#      app tsconfig extends — the Prisma `prisma-client` generator reads it.
-#   2. `prisma generate` emits the typed client into src/lib/server/generated.
-#   3. the actual adapter-node build (its own `svelte-kit sync && vite build`).
+# App source, then generate Prisma's typed client before building Next.js.
 COPY . .
-RUN pnpm --filter web exec svelte-kit sync \
-    && pnpm --filter web exec prisma generate \
+RUN pnpm --filter web exec prisma generate \
     && pnpm --filter web build
 
 # ----------------------------------------------------------------------------
 # Stage 2: runtime
 # The whole built workspace is carried over so the runtime keeps:
-#   - apps/web/build           → the adapter-node server (`node build`)
+#   - apps/web/.next           → the Next.js production build
 #   - node_modules (.pnpm)     → prod deps incl. the `pg` Postgres driver
 #   - prisma/ + prisma.config  → schema + migrations for `prisma migrate deploy`
 #   - the Prisma CLI           → run by the chart's migrate initContainer
@@ -64,6 +59,5 @@ WORKDIR /app/apps/web
 USER node
 EXPOSE 3000
 
-# adapter-node entrypoint. The chart runs `prisma migrate deploy` in an
-# initContainer before this starts.
-CMD ["node", "build"]
+# The chart runs `prisma migrate deploy` in an initContainer before this starts.
+CMD ["pnpm", "start"]

@@ -1,55 +1,22 @@
-# Turborepo Svelte starter
+# Foody
 
-This Turborepo starter is maintained by the Turborepo core team
-on [GitHub](https://github.com/vercel/turborepo/tree/main/examples/with-svelte/packages)
-.
+Foody ist eine selbst gehostete Anwendung für Rezepte, Wochenplanung und
+Einkaufslisten. Das Frontend ist eine Next.js-Anwendung; die API basiert auf
+Hono, Effect und oRPC.
 
-## Using this example
+## Workspace
 
-Run the following command:
+- `apps/web` – Next.js-Frontend mit Authentifizierung und Prisma
+- `apps/api` – Hono/oRPC-API
+- `packages/contracts` – gemeinsame API-Verträge
+- `packages/hono-effect` – Effect-Integration für Hono/oRPC
+- `packages/eslint-config` und `packages/typescript-config` – gemeinsame Tools
+
+## Entwicklung
 
 ```sh
-npx create-turbo@latest -e with-svelte
+pnpm install
+pnpm dev
 ```
 
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps
-
-- `docs`: a [svelte-kit](https://kit.svelte.dev/) app
-- `web`: another [svelte-kit](https://kit.svelte.dev/) app
-
-### Packages
-
-#### `hono-effect`
-
-A typed managed-runtime adapter for executing Effect programs and services from
-Hono/oRPC request handlers.
-
-#### `eslint-config`
-
-`eslint` configurations (includes `eslint-plugin-svelte` and `eslint-config-prettier`)
-
-#### `typescript-config`
-
-A package containing a custom `tsconfig` file.
-
-#### `ui`
-
-A stub Svelte component library shared by both `web` and `docs` applications. The package supports Svelte components and
-runes in `.svelte.ts` files, which are not supported in the svelte-kit generated tsconfig.
-
-Please refer to the [packaging](https://svelte.dev/docs/kit/packaging) page of the svelte documentation for additional
-information about svelte component libraries.
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+Weitere Befehle: `pnpm build`, `pnpm lint` und `pnpm check-types`.

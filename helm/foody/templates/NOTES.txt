@@ -22,8 +22,7 @@ Kein Ingress/HTTPRoute aktiv. Per Port-Forward testen:
 {{- end }}
 
 WICHTIG: config.appUrl ({{ .Values.config.appUrl }}) muss exakt der öffentlichen
-URL (Schema + Host) entsprechen — davon hängen der SvelteKit-ORIGIN-Check
-(Formular-POSTs) und die better-auth/OIDC-Callbacks ab.
+URL (Schema + Host) entsprechen — davon hängen die better-auth/OIDC-Callbacks ab.
 
 {{- if .Values.postgres.enabled }}
 
