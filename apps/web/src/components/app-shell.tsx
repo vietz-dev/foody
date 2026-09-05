@@ -2,12 +2,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { BookIcon, CalendarIcon, CartIcon } from './icons';
+import { BookIcon, CalendarIcon, CartIcon, SettingsIcon } from './icons';
 
 const tabs = [
 	{ href: '/plan', label: 'Wochenplan', icon: CalendarIcon },
 	{ href: '/recipes', label: 'Rezepte', icon: BookIcon },
-	{ href: '/plan/einkaufsliste', label: 'Einkauf', icon: CartIcon }
+	{ href: '/plan/einkaufsliste', label: 'Einkauf', icon: CartIcon },
+	{ href: '/settings', label: 'Einstellungen', icon: SettingsIcon }
 ];
 
 function isActive(pathname: string, href: string) {
@@ -53,7 +54,7 @@ export function AppShell({ children, action }: { children: ReactNode; action?: R
 			</main>
 
 			<nav className="fixed inset-x-0 bottom-0 z-20 border-t border-[var(--line)] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-				<ul className="grid grid-cols-3">
+				<ul className="grid grid-cols-4">
 					{tabs.map((t) => {
 						const active = isActive(pathname, t.href);
 						const Icon = t.icon;

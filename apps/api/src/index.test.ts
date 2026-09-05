@@ -18,7 +18,7 @@ describe('createApp', () => {
   });
 
   it.skipIf(!process.env.DATABASE_URL)('lists recipes for the resolved household', async () => {
-    const app = createApp(async () => ({ householdId: 'does-not-exist' }));
+    const app = createApp(async () => ({ householdId: 'does-not-exist', userId: 'nobody' }));
     const res = await rpc(app, 'recipes/list');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ json: [] });
