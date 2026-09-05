@@ -2,13 +2,13 @@
 # Foody — local development stack
 #
 # Starts a PostgreSQL instance for local dev. The app itself still runs on the
-# host via `pnpm --filter web dev`; it connects to this container through the
-# DATABASE_URL in apps/web/.env:
+# host via `pnpm --filter api dev`; it connects to this container through the
+# DATABASE_URL in apps/api/.env:
 #   postgresql://foody:foody@localhost:5432/foody?schema=public
 #
 # Usage:
 #   docker compose up -d                 # start Postgres
-#   pnpm --filter web exec prisma migrate dev   # apply migrations
+#   pnpm --filter api run prisma:migrate        # apply migrations
 #   pnpm --filter web dev                # run the app
 #   docker compose down                  # stop (add -v to wipe the data volume)
 # =============================================================================

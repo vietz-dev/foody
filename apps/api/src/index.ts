@@ -94,4 +94,4 @@ export function createApp(resolveContext: ContextResolver = async () => null) {
 const app = createApp();
 export default app;
 if (process.env.NODE_ENV !== 'test')
-  serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3000) });
+  serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3001) });

@@ -25,13 +25,15 @@ RUN apt-get update \
 
 # Workspace manifests first — keeps `pnpm install` cached across source changes.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile
 
-# App source, then generate Prisma's typed client before building Next.js.
+# App source, then generate Prisma's typed client in its owning API package
+# before building Next.js.
 COPY . .
-RUN pnpm --filter web exec prisma generate \
+RUN pnpm --filter api run prisma:generate \
     && pnpm --filter web build
 
 # ----------------------------------------------------------------------------
@@ -39,7 +41,7 @@ RUN pnpm --filter web exec prisma generate \
 # The whole built workspace is carried over so the runtime keeps:
 #   - apps/web/.next           → the Next.js production build
 #   - node_modules (.pnpm)     → prod deps incl. the `pg` Postgres driver
-#   - prisma/ + prisma.config  → schema + migrations for `prisma migrate deploy`
+#   - apps/api/prisma/ + prisma.config → schema + migrations for `prisma migrate deploy`
 #   - the Prisma CLI           → run by the chart's migrate initContainer
 # ----------------------------------------------------------------------------
 FROM base AS runner
@@ -59,5 +61,5 @@ WORKDIR /app/apps/web
 USER node
 EXPOSE 3000
 
-# The chart runs `prisma migrate deploy` in an initContainer before this starts.
+# The chart runs the API's `prisma migrate deploy` in an initContainer before this starts.
 CMD ["pnpm", "start"]
