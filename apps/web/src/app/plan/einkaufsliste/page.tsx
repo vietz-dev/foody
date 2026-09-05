@@ -8,7 +8,7 @@ import { ShoppingGroup } from './shopping-group';
 
 export default async function ShoppingListPage() {
 	await requireUser();
-	const list = await api.shoppingList.get({});
+	const [list, picnic] = await Promise.all([api.shoppingList.get({}), api.picnic.status({})]);
 	const isEmpty = !list.einkaufen.length && !list.vorrat.length && !list.nichtZugeordnet.length;
 
 	return (
@@ -40,7 +40,11 @@ export default async function ShoppingListPage() {
 				</p>
 			) : (
 				<>
-					<ShoppingGroup title="Einkaufen" items={list.einkaufen} />
+					<ShoppingGroup
+						title="Einkaufen"
+						items={list.einkaufen}
+						picnic={{ connected: picnic.status === 'connected' }}
+					/>
 					<ShoppingGroup title="Vorrat prüfen" items={list.vorrat} muted showRecipeCount />
 					<ShoppingGroup title="Nicht zugeordnet" items={list.nichtZugeordnet} muted />
 				</>

@@ -13,6 +13,7 @@ export type ShoppingListItem = {
   quantities: Array<{ amount: number; unit: string }>;
   recipeCount: number;
   unquantified: boolean;
+  picnic: { id: string; name: string; unitQuantity: string; count: number } | null;
 };
 
 export type IShoppingListRepository = {

@@ -114,10 +114,28 @@ model Ingredient {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
+  // Household-wide mapping to a Picnic selling unit ("welche Butter kaufen wir").
+  picnicProductId    String?
+  picnicProductName  String?
+  picnicUnitQuantity String?
+
   recipeIngredients RecipeIngredient[]
 
   @@index([householdId])
   @@map("ingredients")
+}
+
+// Per-user Picnic login. Stores only the encrypted session token, never the password.
+model PicnicAccount {
+  userId           String   @id
+  email            String
+  countryCode      String   @default("DE")
+  authKey          String
+  pendingTwoFactor Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("picnic_accounts")
 }
 
 model User {

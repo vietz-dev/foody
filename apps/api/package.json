@@ -22,6 +22,7 @@
     "@vietz/auth": "workspace:*",
     "effect": "^3.19.0",
     "hono": "^4.13.7",
+    "picnic-api": "^4.7.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
