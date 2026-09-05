@@ -6,21 +6,26 @@ ENV PNPM_HOME="/pnpm" PATH="/pnpm:$PATH"
 RUN corepack enable
 WORKDIR /app
 
+# Reduce the monorepo to api + its workspace dependencies with a matching
+# pruned lockfile.
+FROM base AS pruner
+RUN npm install -g turbo@2.10.5
+COPY . .
+RUN turbo prune api --docker
+
 FROM base AS builder
-# Manifests first so `pnpm install` stays cached across source changes.
-COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
-COPY packages ./packages
-RUN pnpm install --frozen-lockfile --filter api...
-COPY apps/api apps/api
-# Bundle src + workspace packages into dist/index.js, then reinstall prod deps
-# only (a fresh install, since `--prod` on an existing tree leaves devDeps in .pnpm).
-# pnpm skips @prisma/engines' postinstall on that reinstall, so run it by hand:
-# it fetches the schema-engine binary that `prisma migrate deploy` needs.
-RUN pnpm --filter api build \
+# Manifests + lockfile first so `pnpm install` stays cached across source changes.
+COPY --from=pruner /app/out/json/ .
+RUN pnpm install --frozen-lockfile
+COPY --from=pruner /app/out/full/ .
+# Bundle src + workspace packages into dist/index.js (turbo runs prisma:generate
+# first), then reinstall prod deps only (a fresh install, since `--prod` on an
+# existing tree leaves devDeps in .pnpm). pnpm skips @prisma/engines' postinstall
+# on that reinstall, so run it by hand: it fetches the schema-engine binary that
+# `prisma migrate deploy` needs.
+RUN pnpm turbo run build --filter=api \
     && rm -rf apps/api/src node_modules apps/*/node_modules packages/*/node_modules \
-    && pnpm install --frozen-lockfile --prod --filter api... \
+    && pnpm install --frozen-lockfile --prod \
     && node "$(find node_modules/.pnpm -path '*/@prisma/engines/scripts/postinstall.js')"
 
 FROM base AS runner

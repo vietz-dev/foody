@@ -2,18 +2,30 @@
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
   "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", ".vercel/**", "dist/**"]
+    "transit": {
+      "dependsOn": ["^transit"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
+    "prisma:generate": {
+      "inputs": ["prisma/schema.prisma", "prisma.config.ts"],
+      "outputs": ["src/generated/prisma/**"]
+    },
+    "build": {
+      "dependsOn": ["^build", "prisma:generate"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["transit", "prisma:generate"]
+    },
+    "lint": {
+      "dependsOn": ["transit"]
+    },
+    "test": {
+      "dependsOn": ["transit", "prisma:generate"],
+      "passThroughEnv": ["DATABASE_URL"]
     },
     "dev": {
+      "dependsOn": ["prisma:generate"],
       "cache": false,
       "persistent": true
     }
