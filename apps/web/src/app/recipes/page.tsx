@@ -1,2 +1,89 @@
 import Link from 'next/link';
-export default function RecipesPage() { return <main className="min-h-screen bg-[var(--cream)]"><header className="border-b border-[var(--line)] bg-white"><div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5"><Link href="/" className="text-xl font-black">foody<span className="text-[var(--green)]">.</span></Link><Link href="/recipes/new" className="rounded-full bg-[var(--green)] px-4 py-2 text-sm font-bold text-white">+ Neues Rezept</Link></div></header><div className="mx-auto max-w-4xl px-6 py-10"><Link href="/" className="text-sm text-[var(--muted)]">← Foody</Link><h1 className="mt-7 text-4xl font-black">Eure Rezepte</h1><p className="mt-2 text-[var(--muted)]">Alles, was ihr gerne kocht — gesammelt an einem Ort.</p><div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{['Cremige Tomatenpasta','Ofengemüse mit Halloumi','Thai-Curry','Kartoffelgratin','Tacos mit Bohnen','Sommersalat'].map((name, i) => <Link href={`/recipes/${i + 1}`} key={name} className="group rounded-3xl bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"><div className={`flex h-36 items-center justify-center rounded-2xl text-5xl ${['bg-[#f4d2b6]','bg-[#cfe2c3]','bg-[#ead6a7]'][i % 3]}`}>🍽️</div><h2 className="mt-4 font-bold group-hover:text-[var(--green)]">{name}</h2><p className="mt-1 text-sm text-[var(--muted)]">30 Min · 2 Portionen</p></Link>)}</div></div></main>; }
+import { Button, IconButton } from '@chakra-ui/react';
+import { AppShell, PageHeader } from '../../components/app-shell';
+import { ClockIcon, PlusIcon, UsersIcon } from '../../components/icons';
+
+const recipes = [
+	'Cremige Tomatenpasta',
+	'Ofengemüse mit Halloumi',
+	'Thai-Curry',
+	'Kartoffelgratin',
+	'Tacos mit Bohnen',
+	'Sommersalat'
+];
+const tints = ['bg-[#f4d2b6]', 'bg-[#cfe2c3]', 'bg-[#ead6a7]'];
+
+export default function RecipesPage() {
+	return (
+		<AppShell
+			action={
+				<Button
+					asChild
+					size="sm"
+					rounded="full"
+					colorPalette="brand"
+					fontWeight="bold"
+					display={{ base: 'none', md: 'inline-flex' }}
+				>
+					<Link href="/recipes/new">
+						<PlusIcon size={16} /> Neues Rezept
+					</Link>
+				</Button>
+			}
+		>
+			<PageHeader
+				eyebrow="Eure Sammlung"
+				title="Rezepte"
+				subtitle={`${recipes.length} Rezepte gespeichert`}
+			/>
+
+			<div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+				{recipes.map((name, i) => (
+					<Link
+						key={name}
+						href={`/recipes/${i + 1}`}
+						className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[var(--line)] transition active:scale-[.98] md:hover:-translate-y-0.5 md:hover:shadow-md"
+					>
+						<div
+							className={`flex aspect-[4/3] items-center justify-center text-4xl ${tints[i % 3]}`}
+						>
+							🍽️
+						</div>
+						<div className="p-3">
+							<h2 className="line-clamp-2 text-sm leading-snug font-bold group-hover:text-[var(--green)] sm:text-base">
+								{name}
+							</h2>
+							<p className="mt-1.5 flex items-center gap-2.5 text-xs text-[var(--muted)]">
+								<span className="inline-flex items-center gap-1">
+									<ClockIcon size={12} />
+									30 Min
+								</span>
+								<span className="inline-flex items-center gap-1">
+									<UsersIcon size={12} />2
+								</span>
+							</p>
+						</div>
+					</Link>
+				))}
+			</div>
+
+			<IconButton
+				asChild
+				aria-label="Neues Rezept"
+				colorPalette="brand"
+				size="xl"
+				rounded="full"
+				shadow="lg"
+				position="fixed"
+				right="4"
+				bottom="calc(5rem + env(safe-area-inset-bottom))"
+				zIndex="30"
+				display={{ base: 'inline-flex', md: 'none' }}
+			>
+				<Link href="/recipes/new">
+					<PlusIcon size={26} />
+				</Link>
+			</IconButton>
+		</AppShell>
+	);
+}

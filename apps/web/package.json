@@ -11,12 +11,13 @@
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"@foody/contracts": "workspace:*",
-		"@orpc/contract": "^1.15.0",
 		"@ai-sdk/anthropic": "^4.0.16",
 		"@chakra-ui/react": "^3.24.0",
+		"@emotion/cache": "11.14.0",
 		"@emotion/react": "^11.14.0",
+		"@foody/contracts": "workspace:*",
 		"@orpc/client": "^1.15.0",
+		"@orpc/contract": "^1.15.0",
 		"@prisma/adapter-pg": "^7.8.0",
 		"@prisma/client": "^7.8.0",
 		"ai": "^7.0.31",
