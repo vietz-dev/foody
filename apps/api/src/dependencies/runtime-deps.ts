@@ -2,11 +2,14 @@ import { AuthLive, AuthTag, authConfigFromEnv, defineContext } from '@vietz/auth
 import { Context, Effect, Layer } from 'effect';
 import { PrismaLive, PrismaService } from '../infrastructure/prisma.js';
 import { makeCatalogRepositoryDeps } from '../repositories/catalog/deps.js';
+import { makePicnicRepositoryDeps } from '../repositories/picnic/deps.js';
 import { makePlanRepositoryDeps } from '../repositories/plan/deps.js';
 import { makeRecipeRepositoryDeps } from '../repositories/recipe/deps.js';
 import { makeShoppingListRepositoryDeps } from '../repositories/shoppingList/deps.js';
 import { makeCatalogServiceDeps } from '../services/catalog/deps.js';
 import type { CatalogService } from '../services/catalog/service.js';
+import { makePicnicServiceDeps } from '../services/picnic/deps.js';
+import type { PicnicService } from '../services/picnic/service.js';
 import { makePlanServiceDeps } from '../services/plan/deps.js';
 import type { PlanService } from '../services/plan/service.js';
 import { makeRecipeServiceDeps } from '../services/recipe/deps.js';
@@ -17,7 +20,13 @@ import type { ShoppingListService } from '../services/shoppingList/service.js';
 export const Auth = AuthTag<'householdId'>();
 export type Auth = Context.Tag.Identifier<typeof Auth>;
 
-export type RuntimeDeps = RecipeService | PlanService | CatalogService | ShoppingListService | Auth;
+export type RuntimeDeps =
+  | RecipeService
+  | PlanService
+  | CatalogService
+  | ShoppingListService
+  | PicnicService
+  | Auth;
 
 // Session-only Better Auth on the same Prisma client the repositories use.
 const authLayer = Layer.unwrapEffect(
@@ -38,11 +47,13 @@ const recipeRepository = makeRecipeRepositoryDeps(PrismaLive);
 const planRepository = makePlanRepositoryDeps(PrismaLive);
 const catalogRepository = makeCatalogRepositoryDeps(PrismaLive);
 const shoppingListRepository = makeShoppingListRepositoryDeps(PrismaLive);
+const picnicRepository = makePicnicRepositoryDeps(PrismaLive);
 
 export const AppLive: Layer.Layer<RuntimeDeps> = Layer.mergeAll(
   makeRecipeServiceDeps(recipeRepository),
   makePlanServiceDeps(planRepository),
   makeCatalogServiceDeps(catalogRepository),
   makeShoppingListServiceDeps(shoppingListRepository),
+  makePicnicServiceDeps(picnicRepository),
   authLayer
 );

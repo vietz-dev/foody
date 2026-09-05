@@ -28,3 +28,16 @@ can absorb aliases through merging.
 A derived view of selected weekly-plan recipes. It groups mapped ingredients
 by catalog identity and separates them into shopping, staple, and unmapped
 sections.
+
+## Picnic account
+
+A per-user link to the Picnic online supermarket. Foody stores only the
+encrypted Picnic session token (never the password); ordering and payment stay
+in the Picnic app. Connecting may require a one-time SMS code.
+
+## Picnic mapping
+
+The household-wide answer to "which Picnic product is this ingredient". It lives
+on the catalog entry (`picnicProductId`, name, pack size). The shopping list
+turns the aggregated quantity into a suggested pack count; pushing to the cart
+only tops up what is not already in it.
