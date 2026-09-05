@@ -4,7 +4,7 @@ import { implement, onError } from '@orpc/server';
 import { Hono } from 'hono';
 import { contract } from '@foody/contracts';
 import { createHonoEffectRuntime } from '@foody/hono-effect';
-import { AppLive } from './dependencies/runtime-deps.js';
+import { AppLive, Auth } from './dependencies/runtime-deps.js';
 import { CatalogService } from './services/catalog/service.js';
 import { PlanService } from './services/plan/service.js';
 import { RecipeService } from './services/recipe/service.js';
@@ -91,7 +91,9 @@ export function createApp(resolveContext: ContextResolver = async () => null) {
   return app;
 }
 
-const app = createApp();
+const app = createApp((request) =>
+  runService(Auth, (auth) => auth.resolveContext(request.headers))
+);
 export default app;
 if (process.env.NODE_ENV !== 'test')
   serve({ fetch: app.fetch, port: Number(process.env.PORT ?? 3001) });

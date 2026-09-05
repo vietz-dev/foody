@@ -2,40 +2,35 @@ import Link from 'next/link';
 import { Badge, Button } from '@chakra-ui/react';
 import { AppShell } from '../components/app-shell';
 import { BookIcon, CalendarIcon, CartIcon, ClockIcon, UsersIcon } from '../components/icons';
+import { api } from '@/lib/server/api';
+import { requireUser } from '@/lib/server/session';
 
-const meals = [
-	{ day: 'Heute', title: 'Cremige Tomatenpasta', minutes: 25, portions: 2, color: 'bg-[#f4d2b6]' },
-	{
-		day: 'Morgen',
-		title: 'Ofengemüse mit Halloumi',
-		minutes: 40,
-		portions: 2,
-		color: 'bg-[#cfe2c3]'
-	},
-	{ day: 'Mittwoch', title: 'Thai-Curry', minutes: 30, portions: 3, color: 'bg-[#ead6a7]' }
-];
+const tints = ['bg-[#f4d2b6]', 'bg-[#cfe2c3]', 'bg-[#ead6a7]'];
 
-const shortcuts = [
-	{ href: '/plan', label: 'Wochenplan', hint: '3 Gerichte geplant', icon: CalendarIcon },
-	{ href: '/recipes', label: 'Rezepte', hint: '6 gespeichert', icon: BookIcon },
-	{ href: '/plan/einkaufsliste', label: 'Einkauf', hint: '6 Zutaten offen', icon: CartIcon }
-];
+export default async function Home() {
+	const user = await requireUser();
+	const [plan, shopping] = await Promise.all([api.plan.list({}), api.shoppingList.get({})]);
+	const meals = plan.filter((r) => r.planned);
 
-export default function Home() {
+	const shortcuts = [
+		{
+			href: '/plan',
+			label: 'Wochenplan',
+			hint: `${meals.length} Gerichte geplant`,
+			icon: CalendarIcon
+		},
+		{ href: '/recipes', label: 'Rezepte', hint: `${plan.length} gespeichert`, icon: BookIcon },
+		{
+			href: '/plan/einkaufsliste',
+			label: 'Einkauf',
+			hint: `${shopping.einkaufen.length} Zutaten offen`,
+			icon: CartIcon
+		}
+	];
+
 	return (
 		<AppShell
-			action={
-				<Button
-					asChild
-					size="sm"
-					rounded="full"
-					bg="var(--ink)"
-					color="white"
-					_hover={{ bg: 'black' }}
-				>
-					<Link href="/login">Anmelden</Link>
-				</Button>
-			}
+			action={<span className="text-sm font-semibold text-[var(--muted)]">{user.name}</span>}
 		>
 			<section className="pt-2">
 				<p className="text-xs font-bold tracking-[.18em] text-[var(--green)] uppercase">
@@ -90,33 +85,41 @@ export default function Home() {
 						{meals.length} Gerichte
 					</Badge>
 				</div>
-				<ul className="divide-y divide-[var(--line)]">
-					{meals.map((meal) => (
-						<li key={meal.day} className="flex items-center gap-3 py-3">
-							<div
-								className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${meal.color}`}
-							>
-								🍽️
-							</div>
-							<div className="min-w-0 flex-1">
-								<p className="text-[11px] font-bold tracking-wider text-[var(--muted)] uppercase">
-									{meal.day}
-								</p>
-								<p className="line-clamp-2 leading-snug font-bold">{meal.title}</p>
-								<p className="mt-0.5 flex items-center gap-3 text-xs text-[var(--muted)]">
-									<span className="inline-flex items-center gap-1">
-										<ClockIcon size={12} />
-										{meal.minutes} Min
-									</span>
-									<span className="inline-flex items-center gap-1">
-										<UsersIcon size={12} />
-										{meal.portions} Portionen
-									</span>
-								</p>
-							</div>
-						</li>
-					))}
-				</ul>
+				{meals.length === 0 ? (
+					<p className="py-4 text-center text-sm text-[var(--muted)]">Noch nichts geplant.</p>
+				) : (
+					<ul className="divide-y divide-[var(--line)]">
+						{meals.map((meal, i) => (
+							<li key={meal.id} className="flex items-center gap-3 py-3">
+								<div
+									className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${tints[i % 3]}`}
+								>
+									🍽️
+								</div>
+								<div className="min-w-0 flex-1">
+									<Link
+										href={`/recipes/${meal.id}`}
+										className="line-clamp-2 leading-snug font-bold"
+									>
+										{meal.name}
+									</Link>
+									<p className="mt-0.5 flex items-center gap-3 text-xs text-[var(--muted)]">
+										{meal.prepTimeMinutes && (
+											<span className="inline-flex items-center gap-1">
+												<ClockIcon size={12} />
+												{meal.prepTimeMinutes} Min
+											</span>
+										)}
+										<span className="inline-flex items-center gap-1">
+											<UsersIcon size={12} />
+											{meal.portions} Portionen
+										</span>
+									</p>
+								</div>
+							</li>
+						))}
+					</ul>
+				)}
 				<Button
 					asChild
 					mt="3"

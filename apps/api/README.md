@@ -5,9 +5,11 @@ The API is contract-first: request and response schemas live in
 `/rpc/*`.
 
 `createApp(resolveContext)` receives the authenticated household context. The
-default export deliberately rejects RPC requests until the deployment wires
-its Better Auth session resolver; no household identifier is accepted from an
-untrusted client header.
+default export resolves it from the Better Auth session cookie forwarded by the
+web app (`@vietz/auth`, shared with the web app), so `BETTER_AUTH_SECRET` and
+`BETTER_AUTH_URL` must match `apps/web`. No household identifier is accepted
+from an untrusted client header. Copy `.env.example` to `.env`; `pnpm dev` and
+`pnpm start` load it.
 
 The API uses Effect layers for dependency injection. Prisma is created once as
 a scoped `PrismaService`, repositories contain database access, and services
