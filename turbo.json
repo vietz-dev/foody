@@ -17,9 +17,6 @@
     "check-types": {
       "dependsOn": ["transit", "prisma:generate"]
     },
-    "lint": {
-      "dependsOn": ["transit"]
-    },
     "test": {
       "dependsOn": ["transit", "prisma:generate"],
       "passThroughEnv": ["DATABASE_URL"]

@@ -12,8 +12,8 @@
 # =============================================================================
 
 # --- Global settings ---
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 imagePullSecrets: []
 
@@ -22,7 +22,7 @@ serviceAccount:
   create: true
   automount: false
   annotations: {}
-  name: ""
+  name: ''
 
 # --- Components ---
 # Images are built and pushed by the Release workflow (.github/workflows/release.yml):
@@ -31,7 +31,7 @@ serviceAccount:
 web:
   image:
     repository: ghcr.io/vietz-dev/foody-web
-    tag: ""
+    tag: ''
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 3000
@@ -44,7 +44,7 @@ web:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: "1"
+      cpu: '1'
       memory: 1Gi
   # `/` returns 200 (or a 3xx redirect to /login) once the server is up — both
   # count as healthy for an httpGet probe.
@@ -68,7 +68,7 @@ web:
 api:
   image:
     repository: ghcr.io/vietz-dev/foody-api
-    tag: ""
+    tag: ''
     pullPolicy: IfNotPresent
   replicaCount: 2
   port: 3001
@@ -81,7 +81,7 @@ api:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: "1"
+      cpu: '1'
       memory: 512Mi
   livenessProbe:
     httpGet:
@@ -145,12 +145,12 @@ postgres:
     username: foody
     database: foody
     # Used to create the chart-managed secret when enabled and no existingSecret.
-    password: ""
+    password: ''
     # Reference an existing secret holding key `password` instead of the above.
-    existingSecret: ""
+    existingSecret: ''
   persistence:
     size: 8Gi
-    storageClass: ""
+    storageClass: ''
   resources: {}
 
 # --- External PostgreSQL (recommended — used when postgres.enabled=false) ---
@@ -158,24 +158,24 @@ externalDatabase:
   # Option A (preferred — CNPG / operator): pull a ready-made DSN from a Secret.
   # CNPG publishes a full `postgres://…` connection string under the "uri" key of
   # its "<cluster>-app" secret; point existingSecret at it and you're done.
-  existingSecret: ""
-  existingSecretUrlKey: "uri"
+  existingSecret: ''
+  existingSecretUrlKey: 'uri'
   # Option B: assemble the DSN from parts; password comes from a Secret key.
   # Set existingSecretUrlKey: "" to use this path.
-  host: ""
+  host: ''
   port: 5432
   database: foody
   username: foody
-  existingSecretPasswordKey: "password"
+  existingSecretPasswordKey: 'password'
   sslmode: require
 
 # --- Configuration (non-sensitive → ConfigMap) ---
 config:
   # Public URL guests use to reach Foody. This is the better-auth base URL and
   # MUST match the ingress host and scheme.
-  appUrl: "https://foody.local"
+  appUrl: 'https://foody.local'
   # Pocket ID / generic OIDC issuer (discovery at <issuer>/.well-known/openid-configuration).
-  oidcIssuer: "https://auth.vietz.dev"
+  oidcIssuer: 'https://auth.vietz.dev'
 
 # --- Secrets (sensitive → Kubernetes Secret) ---
 # For production, create the Secret manually and set existingSecret. Otherwise
@@ -183,12 +183,12 @@ config:
 # The Secret must expose these keys:
 #   BETTER_AUTH_SECRET, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, ANTHROPIC_API_KEY
 secrets:
-  existingSecret: ""
+  existingSecret: ''
   # openssl rand -base64 32
-  betterAuthSecret: ""
-  oidcClientId: ""
-  oidcClientSecret: ""
-  anthropicApiKey: ""
+  betterAuthSecret: ''
+  oidcClientId: ''
+  oidcClientSecret: ''
+  anthropicApiKey: ''
 
 # --- Ingress ---
 ingress:

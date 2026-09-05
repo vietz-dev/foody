@@ -4,7 +4,7 @@ description: Foody — KI-gestützte Essensplanung (Next.js + Hono-API + Postgre
 
 type: application
 version: 0.2.0
-appVersion: "0.2.0"
+appVersion: '0.2.0'
 keywords:
   - foody
   - meal-planning

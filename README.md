@@ -10,7 +10,7 @@ Hono, Effect und oRPC.
 - `apps/api` – Hono/oRPC-API
 - `packages/contracts` – gemeinsame API-Verträge
 - `packages/hono-effect` – Effect-Integration für Hono/oRPC
-- `packages/eslint-config` und `packages/typescript-config` – gemeinsame Tools
+- `packages/typescript-config` – gemeinsame Tools
 
 ## Entwicklung
 

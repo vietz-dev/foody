@@ -7,13 +7,13 @@ Daten zu migrieren, nur Values und Kubernetes-Objekte.
 
 ## Was sich ändert
 
-| 0.2.x | 0.3.0 |
-|-------|-------|
-| Deployment `<release>-foody` | Deployments `<release>-foody-web` und `<release>-foody-api` |
-| Service `<release>-foody` (Port 3000) | Services `<release>-foody-web` (3000) und `<release>-foody-api` (3001, nur clusterintern) |
-| Image `ghcr.io/vietz-dev/foody` | `ghcr.io/vietz-dev/foody-web` + `ghcr.io/vietz-dev/foody-api` |
-| Migrations-initContainer auf dem App-Pod | initContainer auf den api-Pods |
-| ConfigMap-Keys `HOST`, `PORT` | `HOSTNAME`, `API_URL`; `PORT` je Container |
+| 0.2.x                                    | 0.3.0                                                                                     |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Deployment `<release>-foody`             | Deployments `<release>-foody-web` und `<release>-foody-api`                               |
+| Service `<release>-foody` (Port 3000)    | Services `<release>-foody-web` (3000) und `<release>-foody-api` (3001, nur clusterintern) |
+| Image `ghcr.io/vietz-dev/foody`          | `ghcr.io/vietz-dev/foody-web` + `ghcr.io/vietz-dev/foody-api`                             |
+| Migrations-initContainer auf dem App-Pod | initContainer auf den api-Pods                                                            |
+| ConfigMap-Keys `HOST`, `PORT`            | `HOSTNAME`, `API_URL`; `PORT` je Container                                                |
 
 Unverändert: `config.*`, `secrets.*`, `postgres.*`, `externalDatabase.*`,
 `migrations.*`, `ingress.*`, `httpRoute.*`, `serviceAccount.*`, Security-Contexts,
@@ -21,14 +21,14 @@ Scheduling-Values, ConfigMap- und Secret-Namen.
 
 ### Values umbenennen
 
-| alt (0.2.x) | neu (0.3.0) |
-|-------------|-------------|
+| alt (0.2.x)                                           | neu (0.3.0)                                              |
+| ----------------------------------------------------- | -------------------------------------------------------- |
 | `image.repository` / `image.tag` / `image.pullPolicy` | `web.image.*` **und** `api.image.*` (zwei Repositories!) |
-| `replicaCount` (Default 1) | `web.replicaCount` / `api.replicaCount` (Default 2) |
-| `port` | `web.port` / `api.port` |
-| `resources` | `web.resources` / `api.resources` |
-| `livenessProbe` / `readinessProbe` | `web.livenessProbe` … / `api.livenessProbe` … |
-| `service.*` | `web.service.*` / `api.service.*` |
+| `replicaCount` (Default 1)                            | `web.replicaCount` / `api.replicaCount` (Default 2)      |
+| `port`                                                | `web.port` / `api.port`                                  |
+| `resources`                                           | `web.resources` / `api.resources`                        |
+| `livenessProbe` / `readinessProbe`                    | `web.livenessProbe` … / `api.livenessProbe` …            |
+| `service.*`                                           | `web.service.*` / `api.service.*`                        |
 
 Nicht mehr existierende Top-Level-Keys werden vom Chart ignoriert — ein
 vergessener alter `image.tag` führt also still zum Fallback auf `Chart.appVersion`.
@@ -47,10 +47,10 @@ vergessener alter `image.tag` führt also still zum Fallback auf `Chart.appVersi
    # hinzufügen (tag optional, Default = Chart.appVersion):
    web:
      image:
-       tag: "0.3.0"
+       tag: '0.3.0'
    api:
      image:
-       tag: "0.3.0"
+       tag: '0.3.0'
    ```
 
    Wer eine eigene Registry nutzt, setzt `web.image.repository` und
