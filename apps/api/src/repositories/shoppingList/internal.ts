@@ -1,7 +1,15 @@
+import { suggestPackCount } from '../../services/picnic/quantity.js';
 import { normalizeIngredientName } from '../utils.js';
 import type { ShoppingList, ShoppingListItem } from './types.js';
 
-type CatalogEntry = { id: string; name: string; isStaple: boolean };
+type CatalogEntry = {
+  id: string;
+  name: string;
+  isStaple: boolean;
+  picnicProductId?: string | null;
+  picnicProductName?: string | null;
+  picnicUnitQuantity?: string | null;
+};
 type PlannedRecipe = {
   recipeId: string;
   portions: number;
@@ -14,7 +22,7 @@ type PlannedRecipe = {
     }>;
   };
 };
-type AggregatedItem = Omit<ShoppingListItem, 'recipeCount'> & { recipeIds: Set<string> };
+type AggregatedItem = Omit<ShoppingListItem, 'recipeCount' | 'picnic'> & { recipeIds: Set<string> };
 
 export const buildShoppingList = (
   items: PlannedRecipe[],
@@ -50,14 +58,22 @@ export const buildShoppingList = (
   }
 
   for (const entry of aggregatedItems.values()) {
+    const catalogEntry = catalogById.get(entry.ingredientId ?? '');
     const item: ShoppingListItem = {
       ingredientId: entry.ingredientId,
       name: entry.name,
       quantities: entry.quantities,
       recipeCount: entry.recipeIds.size,
-      unquantified: entry.unquantified
+      unquantified: entry.unquantified,
+      picnic: catalogEntry?.picnicProductId
+        ? {
+            id: catalogEntry.picnicProductId,
+            name: catalogEntry.picnicProductName ?? '',
+            unitQuantity: catalogEntry.picnicUnitQuantity ?? '',
+            count: suggestPackCount(entry.quantities, catalogEntry.picnicUnitQuantity)
+          }
+        : null
     };
-    const catalogEntry = catalogById.get(entry.ingredientId ?? '');
     const section =
       entry.ingredientId && catalogEntry?.isStaple
         ? result.vorrat

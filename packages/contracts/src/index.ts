@@ -48,13 +48,24 @@ const planRecipe = recipe.extend({
   portions: z.number().int(),
   declaredServings: z.number().int().nullable()
 });
+const picnicProductRef = z.object({ id, name: z.string(), unitQuantity: z.string() });
+const picnicProduct = picnicProductRef.extend({
+  price: z.number().int(),
+  imageId: z.string().nullable()
+});
 const shoppingListItem = z.object({
   ingredientId: id.nullable(),
   name: z.string(),
   quantities: z.array(z.object({ amount: z.number(), unit: z.string() })),
   recipeCount: z.number().int(),
-  unquantified: z.boolean()
+  unquantified: z.boolean(),
+  /** Household mapping to a Picnic product plus the suggested pack count. */
+  picnic: picnicProductRef.extend({ count: z.number().int() }).nullable()
 });
+const picnicConnectResult = z.discriminatedUnion('status', [
+  z.object({ status: z.enum(['connected', '2fa_required']) }),
+  z.object({ status: z.literal('failed'), message: z.string() })
+]);
 const catalogEntry = z.object({
   id,
   name: z.string(),
@@ -104,6 +115,28 @@ export const contract = {
       .input(z.object({ sourceId: id, targetId: id }))
       .output(z.object({ success: z.literal(true) }))
   },
+  picnic: {
+    status: oc.input(z.object({})).output(
+      z.object({
+        status: z.enum(['disconnected', 'pending_2fa', 'connected']),
+        email: z.string().nullable()
+      })
+    ),
+    connect: oc
+      .input(z.object({ email: z.string().email(), password: z.string().min(1) }))
+      .output(picnicConnectResult),
+    verify2fa: oc.input(z.object({ code: z.string().min(1) })).output(picnicConnectResult),
+    disconnect: oc.input(z.object({})).output(z.object({ success: z.literal(true) })),
+    search: oc.input(z.object({ query: z.string().min(1) })).output(z.array(picnicProduct)),
+    mapIngredient: oc
+      .input(z.object({ ingredientId: id, product: picnicProductRef.nullable() }))
+      .output(z.object({ success: z.literal(true) })),
+    pushCart: oc
+      .input(
+        z.object({ items: z.array(z.object({ productId: id, count: z.number().int().min(1) })) })
+      )
+      .output(z.object({ added: z.number().int(), cartCount: z.number().int() }))
+  },
   admin: {
     overview: oc.input(z.object({})).output(
       z.object({
@@ -129,3 +162,5 @@ export type Recipe = z.infer<typeof recipe>;
 export type RecipeDetails = z.infer<typeof recipeDetails>;
 export type PlanRecipe = z.infer<typeof planRecipe>;
 export type ShoppingListItem = z.infer<typeof shoppingListItem>;
+export type PicnicProduct = z.infer<typeof picnicProduct>;
+export type PicnicProductRef = z.infer<typeof picnicProductRef>;
