@@ -19,6 +19,18 @@
       "skillPath": "skills/effect-ts/SKILL.md",
       "computedHash": "6bdb9b95aa83071eca2f67ae947b7d398a22e9e6e08f6cfa35de9516b03efa6e"
     },
+    "migrate-oxfmt": {
+      "source": "oxc-project/oxc",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/migrate-oxfmt/SKILL.md",
+      "computedHash": "48fb5c1edd8f29802ac69fae5d278cf652d520ee1a51032c9d0617212a5baba8"
+    },
+    "migrate-oxlint": {
+      "source": "oxc-project/oxc",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/migrate-oxlint/SKILL.md",
+      "computedHash": "7bc6dccdcc557cdb7d887fc16c6632e685b13860d202b9c9ce5da7504f0dbe18"
+    },
     "next-cache-components-adoption": {
       "source": "vercel/next.js",
       "sourceType": "github",

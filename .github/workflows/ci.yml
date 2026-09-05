@@ -34,8 +34,11 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-
 
-      - name: Build, type-check, lint, test
-        run: pnpm turbo run build check-types lint test
+      - name: Lint and format check
+        run: pnpm lint && pnpm format:check
+
+      - name: Build, type-check, test
+        run: pnpm turbo run build check-types test
         env:
           # The auth route is initialized while Next.js collects build-time
           # route metadata. A non-production value is sufficient in CI.

@@ -29,9 +29,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write       # version PR commit + create GitHub Release/tag
-  pull-requests: write  # open the "chore: release" PR
-  packages: write       # push image + Helm chart to ghcr.io
+  contents: write # version PR commit + create GitHub Release/tag
+  pull-requests: write # open the "chore: release" PR
+  packages: write # push image + Helm chart to ghcr.io
 
 jobs:
   release:
@@ -61,8 +61,8 @@ jobs:
         with:
           version: bash scripts/version.sh
           publish: bash scripts/publish.sh
-          title: "chore: release"
-          commit: "chore: release"
+          title: 'chore: release'
+          commit: 'chore: release'
           # We create one clean v<version> release ourselves in the helm job,
           # instead of the per-package releases this action would otherwise make.
           createGithubReleases: false

@@ -34,20 +34,20 @@ Minimale `my-values.yaml`:
 # Optional — image.tag beider Komponenten fällt auf Chart.appVersion zurück.
 web:
   image:
-    tag: "0.3.0"
+    tag: '0.3.0'
 api:
   image:
-    tag: "0.3.0"
+    tag: '0.3.0'
 
 config:
-  appUrl: "https://foody.example.com"   # == Ingress-Host inkl. Schema
-  oidcIssuer: "https://auth.vietz.dev"
+  appUrl: 'https://foody.example.com' # == Ingress-Host inkl. Schema
+  oidcIssuer: 'https://auth.vietz.dev'
 
 secrets:
-  betterAuthSecret: "<openssl rand -base64 32>"
-  oidcClientId: "<pocket-id client id>"
-  oidcClientSecret: "<pocket-id client secret>"
-  anthropicApiKey: "<sk-ant-...>"
+  betterAuthSecret: '<openssl rand -base64 32>'
+  oidcClientId: '<pocket-id client id>'
+  oidcClientSecret: '<pocket-id client secret>'
+  anthropicApiKey: '<sk-ant-...>'
 
 ingress:
   enabled: true
@@ -76,10 +76,10 @@ Datenbank — Variante B: gebündeltes Postgres vom Chart (Schnellstart):
 postgres:
   enabled: true
   auth:
-    password: "<openssl rand -base64 24>"   # oder existingSecret setzen
+    password: '<openssl rand -base64 24>' # oder existingSecret setzen
   persistence:
     size: 8Gi
-    storageClass: ""     # leer = Default-StorageClass des Clusters
+    storageClass: '' # leer = Default-StorageClass des Clusters
 ```
 
 `config.appUrl` **muss** exakt der öffentlichen URL entsprechen (better-auth/OIDC-
@@ -123,20 +123,20 @@ Bei externem Postgres/CNPG entsprechend die Backup-Mechanismen des Operators nut
 
 ## Wichtige Werte
 
-| Key | Default | Zweck |
-|-----|---------|-------|
-| `web.image.repository` / `web.image.tag` | `ghcr.io/vietz-dev/foody-web` / appVersion | Web-Image |
-| `api.image.repository` / `api.image.tag` | `ghcr.io/vietz-dev/foody-api` / appVersion | API-Image |
-| `web.replicaCount` / `api.replicaCount` | `2` / `2` | Pods je Komponente |
-| `config.appUrl` | `https://foody.local` | Öffentliche URL für better-auth |
-| `config.oidcIssuer` | `https://auth.vietz.dev` | OIDC-Issuer (Pocket ID) |
-| `postgres.enabled` | `false` | Gebündeltes Postgres-StatefulSet deployen |
-| `postgres.auth.password` / `.existingSecret` | `""` | Passwort für gebündeltes Postgres |
-| `postgres.persistence.size` | `8Gi` | Volume-Größe des gebündelten Postgres |
-| `externalDatabase.existingSecret` | `""` | Secret mit fertiger DSN (Key `uri`) |
-| `externalDatabase.host` / `.username` / `.database` | `""` / `foody` / `foody` | DSN aus Einzelteilen |
-| `externalDatabase.sslmode` | `require` | SSL-Modus für externen Postgres |
-| `migrations.enabled` | `true` | `prisma migrate deploy` initContainer (api-Pods) |
-| `secrets.existingSecret` | `""` | Bestehendes Secret statt Klartext |
-| `ingress.enabled` | `true` | Ingress erzeugen |
-| `httpRoute.enabled` | `false` | Gateway-API-Route statt Ingress |
+| Key                                                 | Default                                    | Zweck                                            |
+| --------------------------------------------------- | ------------------------------------------ | ------------------------------------------------ |
+| `web.image.repository` / `web.image.tag`            | `ghcr.io/vietz-dev/foody-web` / appVersion | Web-Image                                        |
+| `api.image.repository` / `api.image.tag`            | `ghcr.io/vietz-dev/foody-api` / appVersion | API-Image                                        |
+| `web.replicaCount` / `api.replicaCount`             | `2` / `2`                                  | Pods je Komponente                               |
+| `config.appUrl`                                     | `https://foody.local`                      | Öffentliche URL für better-auth                  |
+| `config.oidcIssuer`                                 | `https://auth.vietz.dev`                   | OIDC-Issuer (Pocket ID)                          |
+| `postgres.enabled`                                  | `false`                                    | Gebündeltes Postgres-StatefulSet deployen        |
+| `postgres.auth.password` / `.existingSecret`        | `""`                                       | Passwort für gebündeltes Postgres                |
+| `postgres.persistence.size`                         | `8Gi`                                      | Volume-Größe des gebündelten Postgres            |
+| `externalDatabase.existingSecret`                   | `""`                                       | Secret mit fertiger DSN (Key `uri`)              |
+| `externalDatabase.host` / `.username` / `.database` | `""` / `foody` / `foody`                   | DSN aus Einzelteilen                             |
+| `externalDatabase.sslmode`                          | `require`                                  | SSL-Modus für externen Postgres                  |
+| `migrations.enabled`                                | `true`                                     | `prisma migrate deploy` initContainer (api-Pods) |
+| `secrets.existingSecret`                            | `""`                                       | Bestehendes Secret statt Klartext                |
+| `ingress.enabled`                                   | `true`                                     | Ingress erzeugen                                 |
+| `httpRoute.enabled`                                 | `false`                                    | Gateway-API-Route statt Ingress                  |
