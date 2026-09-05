@@ -6,8 +6,8 @@ metadata:
     {{- include "foody.labels" . | nindent 4 }}
 data:
   NODE_ENV: "production"
-  HOST: "0.0.0.0"
-  PORT: {{ .Values.port | quote }}
-  # better-auth base URL (OIDC callbacks) — same public URL.
+  HOSTNAME: "0.0.0.0"
   BETTER_AUTH_URL: {{ .Values.config.appUrl | quote }}
   OIDC_ISSUER: {{ .Values.config.oidcIssuer | quote }}
+  # In-cluster URL the web server uses to reach the api.
+  API_URL: "http://{{ include "foody.fullname" . }}-api:{{ .Values.api.service.port }}"

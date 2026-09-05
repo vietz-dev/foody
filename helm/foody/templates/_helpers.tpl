@@ -80,7 +80,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-DATABASE_URL env entries for the app container + migrate initContainer. Branch order:
+DATABASE_URL env entries for the web/api containers + migrate initContainer. Branch order:
   1. postgres.enabled                          → bundled StatefulSet; password from chart secret.
   2. externalDatabase.existingSecret + URL key → full DSN pulled straight from a Secret (e.g. CNPG "uri").
   3. externalDatabase.existingSecret           → assembled DSN; password from a Secret key via $(VAR).

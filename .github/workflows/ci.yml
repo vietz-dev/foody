@@ -33,6 +33,9 @@ jobs:
       - name: Type check
         run: pnpm --filter web run check-types
 
+      - name: Build API bundle
+        run: pnpm --filter api run build
+
       - name: Build
         run: pnpm --filter web run build
         env:

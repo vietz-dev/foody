@@ -1,19 +1,24 @@
+{{- range $name, $comp := dict "web" .Values.web "api" .Values.api }}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "foody.fullname" . }}
+  name: {{ include "foody.fullname" $ }}-{{ $name }}
   labels:
-    {{- include "foody.labels" . | nindent 4 }}
-  {{- with .Values.service.annotations }}
+    {{- include "foody.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+  {{- with $comp.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ $comp.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ $comp.service.port }}
       targetPort: http
       protocol: TCP
       name: http
   selector:
-    {{- include "foody.selectorLabels" . | nindent 4 }}
+    {{- include "foody.selectorLabels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+{{- end }}
