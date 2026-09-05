@@ -48,6 +48,13 @@ const planRecipe = recipe.extend({
   portions: z.number().int(),
   declaredServings: z.number().int().nullable()
 });
+const shoppingListItem = z.object({
+  ingredientId: id.nullable(),
+  name: z.string(),
+  quantities: z.array(z.object({ amount: z.number(), unit: z.string() })),
+  recipeCount: z.number().int(),
+  unquantified: z.boolean()
+});
 const catalogEntry = z.object({
   id,
   name: z.string(),
@@ -76,9 +83,9 @@ export const contract = {
   shoppingList: {
     get: oc.input(z.object({})).output(
       z.object({
-        einkaufen: z.array(z.unknown()),
-        vorrat: z.array(z.unknown()),
-        nichtZugeordnet: z.array(z.unknown())
+        einkaufen: z.array(shoppingListItem),
+        vorrat: z.array(shoppingListItem),
+        nichtZugeordnet: z.array(shoppingListItem)
       })
     )
   },
@@ -118,3 +125,7 @@ export const contract = {
 
 export type Contract = typeof contract;
 export type RecipeInput = z.infer<typeof recipeInput>;
+export type Recipe = z.infer<typeof recipe>;
+export type RecipeDetails = z.infer<typeof recipeDetails>;
+export type PlanRecipe = z.infer<typeof planRecipe>;
+export type ShoppingListItem = z.infer<typeof shoppingListItem>;
