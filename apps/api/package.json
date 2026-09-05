@@ -8,7 +8,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "dev": "pnpm run prisma:generate && tsx watch --env-file-if-exists=.env src/index.ts",
-    "build": "pnpm run prisma:generate && esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --packages=external --alias:@foody/contracts=../../packages/contracts/src/index.ts --alias:@foody/hono-effect=../../packages/hono-effect/src/index.ts --alias:@vietz/auth=../../packages/auth/src/index.ts --outfile=dist/index.js",
+    "build": "pnpm run prisma:generate && node build.mjs",
     "start": "node --env-file-if-exists=.env dist/index.js",
     "check-types": "tsc --noEmit",
     "test": "vitest run"
