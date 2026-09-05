@@ -1,3 +1,134 @@
 import Link from 'next/link';
-const meals = [{ day: 'Heute', title: 'Cremige Tomatenpasta', meta: '25 Min · 2 Portionen', color: 'bg-[#f4d2b6]' }, { day: 'Morgen', title: 'Ofengemüse mit Halloumi', meta: '40 Min · 2 Portionen', color: 'bg-[#cfe2c3]' }, { day: 'Mittwoch', title: 'Thai-Curry', meta: '30 Min · 3 Portionen', color: 'bg-[#ead6a7]' }];
-export default function Home() { return <main className="min-h-screen bg-[var(--cream)]"><header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-7"><Link href="/" className="text-2xl font-black tracking-tight">foody<span className="text-[var(--green)]">.</span></Link><nav className="hidden gap-8 text-sm text-[var(--muted)] md:flex"><Link href="/plan" className="font-semibold text-[var(--ink)]">Wochenplan</Link><Link href="/recipes">Rezepte</Link><Link href="/plan/einkaufsliste">Einkaufsliste</Link></nav><div className="flex items-center gap-3"><span className="hidden text-sm text-[var(--muted)] sm:inline">Hallo, Justin</span><Link href="/login" className="rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white">Anmelden</Link></div></header><section className="mx-auto grid max-w-6xl gap-12 px-6 pb-20 pt-12 md:grid-cols-[1.05fr_.95fr] md:items-center md:pt-20"><div><p className="mb-5 text-sm font-bold uppercase tracking-[.18em] text-[var(--green)]">Euer Essen. Eure Woche.</p><h1 className="max-w-xl text-5xl font-black leading-[1.05] tracking-[-.04em] md:text-7xl">Weniger planen.<br /><span className="text-[var(--green)]">Mehr genießen.</span></h1><p className="mt-7 max-w-lg text-lg leading-8 text-[var(--muted)]">Foody bringt eure Rezepte, den Wochenplan und die Einkaufsliste an einen Ort.</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/plan" className="rounded-full bg-[var(--green)] px-6 py-3 font-bold text-white shadow-lg shadow-green-900/10">Zum Wochenplan →</Link><Link href="/recipes" className="rounded-full border border-[var(--line)] bg-white px-6 py-3 font-bold">Rezepte entdecken</Link></div></div><div className="relative rounded-[2rem] bg-[#dfead8] p-5 md:p-8"><div className="absolute -right-3 -top-5 rotate-6 rounded-2xl bg-[#f5d59b] px-4 py-3 text-sm font-bold shadow-sm">Guten Appetit! ✨</div><div className="rounded-3xl bg-white p-6 shadow-xl shadow-green-900/5"><div className="mb-6 flex items-center justify-between"><div><p className="m-0 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Diese Woche</p><h2 className="mt-1 text-2xl font-black">Euer Plan</h2></div><span className="rounded-full bg-[#e8f4eb] px-3 py-1 text-xs font-bold text-[var(--green)]">3 Gerichte</span></div><div className="space-y-3">{meals.map((meal) => <div key={meal.day} className="flex items-center gap-3 rounded-2xl border border-[var(--line)] p-3"><div className={`h-14 w-14 shrink-0 rounded-xl ${meal.color}`}><div className="flex h-full items-center justify-center text-xl">🍽️</div></div><div><p className="m-0 text-xs font-bold text-[var(--muted)]">{meal.day}</p><p className="m-0 mt-1 font-bold">{meal.title}</p><p className="m-0 mt-1 text-xs text-[var(--muted)]">{meal.meta}</p></div></div>)}</div></div></div></section></main>; }
+import { Badge, Button } from '@chakra-ui/react';
+import { AppShell } from '../components/app-shell';
+import { BookIcon, CalendarIcon, CartIcon, ClockIcon, UsersIcon } from '../components/icons';
+
+const meals = [
+	{ day: 'Heute', title: 'Cremige Tomatenpasta', minutes: 25, portions: 2, color: 'bg-[#f4d2b6]' },
+	{
+		day: 'Morgen',
+		title: 'Ofengemüse mit Halloumi',
+		minutes: 40,
+		portions: 2,
+		color: 'bg-[#cfe2c3]'
+	},
+	{ day: 'Mittwoch', title: 'Thai-Curry', minutes: 30, portions: 3, color: 'bg-[#ead6a7]' }
+];
+
+const shortcuts = [
+	{ href: '/plan', label: 'Wochenplan', hint: '3 Gerichte geplant', icon: CalendarIcon },
+	{ href: '/recipes', label: 'Rezepte', hint: '6 gespeichert', icon: BookIcon },
+	{ href: '/plan/einkaufsliste', label: 'Einkauf', hint: '6 Zutaten offen', icon: CartIcon }
+];
+
+export default function Home() {
+	return (
+		<AppShell
+			action={
+				<Button
+					asChild
+					size="sm"
+					rounded="full"
+					bg="var(--ink)"
+					color="white"
+					_hover={{ bg: 'black' }}
+				>
+					<Link href="/login">Anmelden</Link>
+				</Button>
+			}
+		>
+			<section className="pt-2">
+				<p className="text-xs font-bold tracking-[.18em] text-[var(--green)] uppercase">
+					Euer Essen. Eure Woche.
+				</p>
+				<h1 className="mt-2 text-4xl leading-[1.05] font-black tracking-[-.03em] sm:text-6xl">
+					Weniger planen.
+					<br />
+					<span className="text-[var(--green)]">Mehr genießen.</span>
+				</h1>
+				<p className="mt-4 max-w-lg text-base leading-7 text-[var(--muted)]">
+					Rezepte, Wochenplan und Einkaufsliste an einem Ort – für euch beide.
+				</p>
+				<div className="mt-6 grid gap-3 sm:flex">
+					<Button asChild size="lg" rounded="full" colorPalette="brand" fontWeight="bold">
+						<Link href="/plan">Zum Wochenplan</Link>
+					</Button>
+					<Button asChild size="lg" rounded="full" variant="outline" bg="white" fontWeight="bold">
+						<Link href="/recipes">Rezepte entdecken</Link>
+					</Button>
+				</div>
+			</section>
+
+			<section className="mt-8 grid grid-cols-3 gap-2 sm:gap-3">
+				{shortcuts.map((s) => {
+					const Icon = s.icon;
+					return (
+						<Link
+							key={s.href}
+							href={s.href}
+							className="flex flex-col gap-2 rounded-2xl border border-[var(--line)] bg-white p-3 transition active:scale-[.98] sm:p-4"
+						>
+							<span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e8f4eb] text-[var(--green)]">
+								<Icon size={18} />
+							</span>
+							<span className="text-sm leading-tight font-bold">{s.label}</span>
+							<span className="text-[11px] leading-tight text-[var(--muted)]">{s.hint}</span>
+						</Link>
+					);
+				})}
+			</section>
+
+			<section className="mt-8 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-[var(--line)] sm:p-6">
+				<div className="mb-4 flex items-center justify-between">
+					<div>
+						<p className="text-xs font-bold tracking-wider text-[var(--muted)] uppercase">
+							Diese Woche
+						</p>
+						<h2 className="mt-0.5 text-xl font-black">Euer Plan</h2>
+					</div>
+					<Badge colorPalette="brand" variant="subtle" rounded="full" px="3" py="1">
+						{meals.length} Gerichte
+					</Badge>
+				</div>
+				<ul className="divide-y divide-[var(--line)]">
+					{meals.map((meal) => (
+						<li key={meal.day} className="flex items-center gap-3 py-3">
+							<div
+								className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl ${meal.color}`}
+							>
+								🍽️
+							</div>
+							<div className="min-w-0 flex-1">
+								<p className="text-[11px] font-bold tracking-wider text-[var(--muted)] uppercase">
+									{meal.day}
+								</p>
+								<p className="line-clamp-2 leading-snug font-bold">{meal.title}</p>
+								<p className="mt-0.5 flex items-center gap-3 text-xs text-[var(--muted)]">
+									<span className="inline-flex items-center gap-1">
+										<ClockIcon size={12} />
+										{meal.minutes} Min
+									</span>
+									<span className="inline-flex items-center gap-1">
+										<UsersIcon size={12} />
+										{meal.portions} Portionen
+									</span>
+								</p>
+							</div>
+						</li>
+					))}
+				</ul>
+				<Button
+					asChild
+					mt="3"
+					w="full"
+					variant="ghost"
+					colorPalette="brand"
+					rounded="xl"
+					fontWeight="bold"
+				>
+					<Link href="/plan">Plan bearbeiten</Link>
+				</Button>
+			</section>
+		</AppShell>
+	);
+}

@@ -1,5 +1,19 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
 import './globals.css';
-export const metadata: Metadata = { title: 'Foody', description: 'Mahlzeitenplanung für euch als Paar.' };
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { return <html lang="de"><body><Providers>{children}</Providers></body></html>; }
+
+export const metadata: Metadata = {
+	title: 'Foody',
+	description: 'Mahlzeitenplanung für euch als Paar.'
+};
+export const viewport: Viewport = { themeColor: '#f7f8f3', viewportFit: 'cover' };
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+	return (
+		<html lang="de">
+			<body>
+				<Providers>{children}</Providers>
+			</body>
+		</html>
+	);
+}
