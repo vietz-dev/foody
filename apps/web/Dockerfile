@@ -6,18 +6,23 @@ ENV PNPM_HOME="/pnpm" PATH="/pnpm:$PATH"
 RUN corepack enable
 WORKDIR /app
 
+# Reduce the monorepo to web + its workspace dependencies (api for the Prisma
+# client, packages/*) with a matching pruned lockfile.
+FROM base AS pruner
+RUN npm install -g turbo@2.10.5
+COPY . .
+RUN turbo prune web --docker
+
 FROM base AS builder
-COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/api/package.json apps/api/
-COPY apps/web/package.json apps/web/
-COPY packages ./packages
+# Manifests + lockfile first so `pnpm install` stays cached across source changes.
+COPY --from=pruner /app/out/json/ .
 RUN pnpm install --frozen-lockfile
-COPY apps ./apps
+COPY --from=pruner /app/out/full/ .
 # The auth route is initialised while Next.js collects route metadata; a
 # placeholder secret is enough at build time (never shipped: builder stage only).
 ENV NEXT_TELEMETRY_DISABLED=1 BETTER_AUTH_SECRET=build-time-placeholder
-RUN pnpm --filter api run prisma:generate \
-    && pnpm --filter web build
+# turbo runs api#prisma:generate before web#build (see apps/web/turbo.json).
+RUN pnpm turbo run build --filter=web
 
 FROM base AS runner
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1

@@ -1,0 +1,16 @@
+{
+	"$schema": "https://turborepo.dev/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"build": {
+			"dependsOn": ["api#prisma:generate"],
+			"passThroughEnv": ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL"]
+		},
+		"check-types": {
+			"dependsOn": ["$TURBO_EXTENDS$", "api#prisma:generate"]
+		},
+		"dev": {
+			"dependsOn": ["$TURBO_EXTENDS$", "api#prisma:generate"]
+		}
+	}
+}

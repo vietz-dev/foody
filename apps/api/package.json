@@ -7,8 +7,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "dev": "pnpm run prisma:generate && tsx watch --env-file-if-exists=.env src/index.ts",
-    "build": "pnpm run prisma:generate && node build.mjs",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "node build.mjs",
     "start": "node --env-file-if-exists=.env dist/index.js",
     "check-types": "tsc --noEmit",
     "test": "vitest run"

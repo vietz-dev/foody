@@ -19,4 +19,10 @@ pnpm install
 pnpm dev
 ```
 
-Weitere Befehle: `pnpm build`, `pnpm lint` und `pnpm check-types`.
+Tasks laufen über [Turborepo](https://turborepo.dev) (`turbo.json`): `pnpm build`,
+`pnpm check-types`, `pnpm lint` und `pnpm test`. Der Prisma-Client wird dabei
+automatisch generiert (`api#prisma:generate`), auch für `web`. Einzelne Pakete
+per Filter: `pnpm dev --filter=api`, `pnpm build --filter=web`.
+
+Die Docker-Images (`apps/web/Dockerfile`, `apps/api/Dockerfile`) nutzen
+`turbo prune`, Build-Kontext ist das Repo-Root.
