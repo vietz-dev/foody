@@ -2,26 +2,28 @@
 
 Self-Hosting von **Foody** (KI-gestützte Essensplanung) im Kubernetes-Cluster.
 
-Foody ist ein Next.js-Server (Port 3000) mit einer
-**PostgreSQL**-Datenbank (Prisma + `pg`-Treiber). Der App-Prozess ist zustandslos:
+Foody besteht aus zwei zustandslosen Prozessen — **web** (Next.js, Port 3000)
+und **api** (Hono/oRPC, Port 3001) — mit einer gemeinsamen **PostgreSQL**-Datenbank
+(Prisma + `pg`-Treiber):
 
-- **Stateless App** — skaliert und rollt normal (RollingUpdate). Der gesamte
-  Zustand liegt in Postgres.
+- **Zwei Deployments** (`<release>-web`, `<release>-api`) mit je 2 Replicas,
+  RollingUpdate. Nur `web` hängt am Ingress; `web` erreicht `api` clusterintern
+  über `API_URL`. Der gesamte Zustand liegt in Postgres.
 - **Datenbank** über einen von zwei Wegen:
   - `postgres.enabled=true` → gebündeltes Single-Node-Postgres-StatefulSet
     (Schnellstart; für einen Haushalt ausreichend).
   - `externalDatabase.*` → externer/operator-verwalteter Postgres (CNPG,
     Cloud-RDS, …) — der empfohlene Weg.
-- **initContainer** führt vor dem Start `prisma migrate deploy` aus.
+- **initContainer** auf den api-Pods führt vor dem Start `prisma migrate deploy` aus.
 
-## 1. Image bauen
+## 1. Images bauen
 
-Das Chart referenziert ein Container-Image, das es noch nicht öffentlich gibt.
-Aus dem **Repo-Root** (Build-Kontext = Monorepo-Root):
+Der Release-Workflow baut und pusht beide Images nach GHCR. Manuell aus dem
+**Repo-Root** (Build-Kontext = Monorepo-Root):
 
 ```bash
-docker build -t ghcr.io/OWNER/foody:0.0.1 .
-docker push  ghcr.io/OWNER/foody:0.0.1
+docker build -f apps/web/Dockerfile -t ghcr.io/vietz-dev/foody-web:0.3.0 .
+docker build -f apps/api/Dockerfile -t ghcr.io/vietz-dev/foody-api:0.3.0 .
 ```
 
 ## 2. Konfiguration
@@ -29,9 +31,13 @@ docker push  ghcr.io/OWNER/foody:0.0.1
 Minimale `my-values.yaml`:
 
 ```yaml
-image:
-  repository: ghcr.io/OWNER/foody
-  tag: "0.0.1"
+# Optional — image.tag beider Komponenten fällt auf Chart.appVersion zurück.
+web:
+  image:
+    tag: "0.3.0"
+api:
+  image:
+    tag: "0.3.0"
 
 config:
   appUrl: "https://foody.example.com"   # == Ingress-Host inkl. Schema
@@ -119,7 +125,9 @@ Bei externem Postgres/CNPG entsprechend die Backup-Mechanismen des Operators nut
 
 | Key | Default | Zweck |
 |-----|---------|-------|
-| `image.repository` / `image.tag` | `ghcr.io/OWNER/foody` / appVersion | Container-Image |
+| `web.image.repository` / `web.image.tag` | `ghcr.io/vietz-dev/foody-web` / appVersion | Web-Image |
+| `api.image.repository` / `api.image.tag` | `ghcr.io/vietz-dev/foody-api` / appVersion | API-Image |
+| `web.replicaCount` / `api.replicaCount` | `2` / `2` | Pods je Komponente |
 | `config.appUrl` | `https://foody.local` | Öffentliche URL für better-auth |
 | `config.oidcIssuer` | `https://auth.vietz.dev` | OIDC-Issuer (Pocket ID) |
 | `postgres.enabled` | `false` | Gebündeltes Postgres-StatefulSet deployen |
@@ -128,7 +136,7 @@ Bei externem Postgres/CNPG entsprechend die Backup-Mechanismen des Operators nut
 | `externalDatabase.existingSecret` | `""` | Secret mit fertiger DSN (Key `uri`) |
 | `externalDatabase.host` / `.username` / `.database` | `""` / `foody` / `foody` | DSN aus Einzelteilen |
 | `externalDatabase.sslmode` | `require` | SSL-Modus für externen Postgres |
-| `migrations.enabled` | `true` | `prisma migrate deploy` initContainer |
+| `migrations.enabled` | `true` | `prisma migrate deploy` initContainer (api-Pods) |
 | `secrets.existingSecret` | `""` | Bestehendes Secret statt Klartext |
 | `ingress.enabled` | `true` | Ingress erzeugen |
 | `httpRoute.enabled` | `false` | Gateway-API-Route statt Ingress |

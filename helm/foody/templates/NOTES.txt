@@ -17,7 +17,7 @@ Aufrufbar über die Gateway-API-Route unter:
 {{- else }}
 
 Kein Ingress/HTTPRoute aktiv. Per Port-Forward testen:
-  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "foody.fullname" . }} 8080:{{ .Values.service.port }}
+  kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "foody.fullname" . }}-web 8080:{{ .Values.web.service.port }}
   # dann http://127.0.0.1:8080 öffnen
 {{- end }}
 
@@ -49,11 +49,4 @@ Secrets: vorhandenes Secret "{{ .Values.secrets.existingSecret }}".
 
 WARNUNG: Das Chart hat ein Secret aus den values erzeugt. Für Produktion das
 Secret manuell anlegen und secrets.existingSecret setzen.
-{{- end }}
-
-{{- if eq .Values.image.repository "ghcr.io/OWNER/foody" }}
-
-HINWEIS: image.repository steht noch auf dem Platzhalter "ghcr.io/OWNER/foody".
-Image bauen/pushen (docker build -t <repo>:<tag> . im Repo-Root) und
-image.repository/image.tag entsprechend setzen.
 {{- end }}

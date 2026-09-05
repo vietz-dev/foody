@@ -1,6 +1,6 @@
 apiVersion: v2
 name: foody
-description: Foody — KI-gestützte Essensplanung (Next.js + PostgreSQL) für den Self-Host im Kubernetes-Cluster
+description: Foody — KI-gestützte Essensplanung (Next.js + Hono-API + PostgreSQL) für den Self-Host im Kubernetes-Cluster
 
 type: application
 version: 0.2.0

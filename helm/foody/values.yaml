@@ -1,13 +1,14 @@
 # =============================================================================
 # Foody Helm values
 #
-# Foody is a self-hosted Next.js server backed by PostgreSQL.
+# Foody is a Next.js frontend (web) plus a Hono API (api), both stateless and
+# backed by one PostgreSQL. Each runs as its own Deployment with 2 replicas.
 # Point it at a Postgres via one of:
 #   * postgres.enabled=true        → a bundled single-node Postgres StatefulSet
 #                                     (quick start; fine for a single household).
 #   * externalDatabase.*           → an external / operator-managed Postgres
 #                                     (CNPG, cloud RDS, …) — the recommended path.
-# The app process is stateless, so it scales and rolls normally.
+# Only web is exposed via Ingress/HTTPRoute; web talks to api in-cluster.
 # =============================================================================
 
 # --- Global settings ---
@@ -23,26 +24,81 @@ serviceAccount:
   annotations: {}
   name: ""
 
-# --- Image ---
-# Built and pushed by the Release workflow (.github/workflows/release.yml).
-#   docker pull ghcr.io/vietz-dev/foody:<version>
+# --- Components ---
+# Images are built and pushed by the Release workflow (.github/workflows/release.yml):
+#   ghcr.io/vietz-dev/foody-web:<version>   ghcr.io/vietz-dev/foody-api:<version>
 # tag defaults to Chart.appVersion when left empty.
-image:
-  repository: ghcr.io/vietz-dev/foody
-  tag: ""
-  pullPolicy: IfNotPresent
+web:
+  image:
+    repository: ghcr.io/vietz-dev/foody-web
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 3000
+  service:
+    type: ClusterIP
+    port: 3000
+    annotations: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  # `/` returns 200 (or a 3xx redirect to /login) once the server is up — both
+  # count as healthy for an httpGet probe.
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
 
-# Foody serves the whole app (frontend + auth + API routes) from one process.
-port: 3000
-replicaCount: 1
-
-resources:
-  requests:
-    cpu: 100m
-    memory: 256Mi
-  limits:
-    cpu: "1"
-    memory: 1Gi
+api:
+  image:
+    repository: ghcr.io/vietz-dev/foody-api
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  port: 3001
+  service:
+    type: ClusterIP
+    port: 3001
+    annotations: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: http
+    initialDelaySeconds: 3
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
 
 # --- Scheduling ---
 nodeSelector: {}
@@ -52,9 +108,9 @@ podAnnotations: {}
 podLabels: {}
 
 # --- Security contexts ---
-# The image runs as the non-root `node` user (uid/gid 1000). readOnlyRootFilesystem
-# is safe: the app is stateless (all data lives in Postgres) and scratch writes go
-# to an emptyDir /tmp.
+# Both images run as the non-root `node` user (uid/gid 1000). readOnlyRootFilesystem
+# is safe: all data lives in Postgres; scratch writes go to emptyDirs (/tmp, and
+# the Next.js image cache for web).
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
@@ -68,35 +124,13 @@ securityContext:
     drop:
       - ALL
 
-# --- Probes ---
-# `/` returns 200 (or a 3xx redirect to /login) once the server is up — both
-# count as healthy for an httpGet probe.
-livenessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 15
-  periodSeconds: 15
-  timeoutSeconds: 5
-  failureThreshold: 3
-
-readinessProbe:
-  httpGet:
-    path: /
-    port: http
-  initialDelaySeconds: 5
-  periodSeconds: 10
-  timeoutSeconds: 3
-  failureThreshold: 3
-
 # Extra volumes/mounts for the app pod (beyond the DB volume + /tmp scratch).
 extraVolumes: []
 extraVolumeMounts: []
 
 # --- Database migrations ---
-# An initContainer runs `prisma migrate deploy` against Postgres before the app
-# container starts. Uses the same image (which ships the Prisma CLI, schema and
-# migrations). Disable only if you apply migrations out-of-band.
+# An initContainer on the api pods runs `prisma migrate deploy` before the api
+# container starts. Uses the api image (ships the Prisma CLI, schema, migrations). Disable only if you apply migrations out-of-band.
 migrations:
   enabled: true
 
@@ -155,12 +189,6 @@ secrets:
   oidcClientId: ""
   oidcClientSecret: ""
   anthropicApiKey: ""
-
-# --- Service ---
-service:
-  type: ClusterIP
-  port: 3000
-  annotations: {}
 
 # --- Ingress ---
 ingress:

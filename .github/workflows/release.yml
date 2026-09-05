@@ -75,10 +75,13 @@ jobs:
         run: echo "version=$(node -p "require('./apps/web/package.json').version")" >> "$GITHUB_OUTPUT"
 
   image:
-    name: Build & Push image
+    name: Build & Push ${{ matrix.app }} image
     needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [web, api]
     steps:
       - uses: actions/checkout@v4
 
@@ -94,7 +97,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/foody
+          images: ghcr.io/${{ github.repository_owner }}/foody-${{ matrix.app }}
           tags: |
             type=raw,value=${{ needs.release.outputs.version }}
             type=raw,value=latest
@@ -105,12 +108,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          file: apps/${{ matrix.app }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
   helm:
     name: Package Helm & Create Release
