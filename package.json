@@ -1,5 +1,6 @@
 {
   "name": "foody",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "build": "turbo run build",
@@ -8,11 +9,9 @@
     "test": "turbo run test",
     "format": "oxfmt",
     "check-types": "turbo run check-types",
-    "changeset": "changeset",
     "format:check": "oxfmt --check"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.0",
     "turbo": "^2.10.5",
     "oxlint": "^1.81.0",
     "oxfmt": "^0.66.0"
