@@ -24,6 +24,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - uses: jdx/mise-action@v3
+        with:
+          install: true
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -34,11 +38,11 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-
 
-      - name: Lint and format check
-        run: pnpm lint && pnpm format:check
+      - name: Static analysis
+        run: mise exec -- hk check --all
 
-      - name: Build, type-check, test
-        run: pnpm turbo run build check-types test
+      - name: Build and test
+        run: pnpm turbo run build test
         env:
           # The auth route is initialized while Next.js collects build-time
           # route metadata. A non-production value is sufficient in CI.

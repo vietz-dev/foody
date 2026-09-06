@@ -1,0 +1,10 @@
+[tools]
+hk = "1.58.1"
+
+[env]
+# hk uses the project's package-managed static-analysis tools.
+_.path = ["node_modules/.bin"]
+
+[hooks]
+# Keep the repository's mise-aware Git hook launcher in sync after tool setup.
+postinstall = "hk install --mise"

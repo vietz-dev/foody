@@ -1,0 +1,42 @@
+amends "package://github.com/jdx/hk/releases/download/v1.58.1/hk@1.58.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v1.58.1/hk@1.58.1#/Builtins.pkl"
+
+min_hk_version = "1.58.1"
+
+// Development-agent assets and generated output are not project source files.
+exclude = List(".agents", ".claude", "node_modules", ".turbo", ".next", "dist", "coverage")
+
+local linters = new Mapping<String, Step> {
+  // Preserve the existing project's warning policy; the hk builtin denies warnings.
+  ["oxlint"] = (Builtins.ox_lint) {
+    check = "oxlint {{files}}"
+    fix = "oxlint --fix {{files}}"
+  }
+  ["oxfmt"] = Builtins.oxfmt
+}
+
+// Type checking is repo-wide, so it intentionally has no file selector.
+local static_checks = (linters) {
+  ["check-types"] {
+    check = "pnpm run check-types"
+    depends = List("oxlint", "oxfmt")
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = linters
+  }
+  ["pre-push"] {
+    steps = static_checks
+  }
+  ["check"] {
+    steps = static_checks
+  }
+  ["fix"] {
+    fix = true
+    steps = linters
+  }
+}
