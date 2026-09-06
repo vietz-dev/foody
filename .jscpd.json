@@ -1,0 +1,10 @@
+{
+  "path": ["apps", "packages"],
+  "format": ["typescript", "tsx", "javascript", "jsx"],
+  "crossFormats": "js-ts",
+  "minTokens": 40,
+  "minLines": 5,
+  "ignore": ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/coverage/**"],
+  "baseline": ".jscpd-baseline.json",
+  "failOnNewClones": 0
+}
