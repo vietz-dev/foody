@@ -9,12 +9,15 @@
     "test": "turbo run test",
     "format": "oxfmt",
     "check-types": "turbo run check-types",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "duplication": "jscpd",
+    "duplication:baseline": "jscpd --update-baseline"
   },
   "devDependencies": {
     "turbo": "^2.10.5",
     "oxlint": "^1.81.0",
-    "oxfmt": "^0.66.0"
+    "oxfmt": "^0.66.0",
+    "jscpd": "5.1.2"
   },
   "packageManager": "pnpm@10.0.0",
   "engines": {

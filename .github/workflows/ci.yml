@@ -41,6 +41,9 @@ jobs:
       - name: Static analysis
         run: mise exec -- hk check --all
 
+      - name: Detect new code duplication
+        run: pnpm duplication
+
       - name: Build and test
         run: pnpm turbo run build test
         env:
