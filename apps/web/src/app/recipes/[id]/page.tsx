@@ -1,10 +1,9 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Button } from '@chakra-ui/react';
 import { AppShell, PageHeader } from '../../../components/app-shell';
-import { ArrowLeftIcon, BookIcon, ClockIcon } from '../../../components/icons';
+import { BookIcon, ClockIcon } from '../../../components/icons';
 import { api } from '@/lib/server/api';
 import { requireUser } from '@/lib/server/session';
+import { BackToRecipesLink } from '../back-to-recipes-link';
 import { Ingredients } from './ingredients';
 
 export default async function RecipePage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,15 +13,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
 	if (!recipe) notFound();
 
 	return (
-		<AppShell
-			action={
-				<Button asChild size="sm" rounded="full" variant="ghost" fontWeight="bold">
-					<Link href="/recipes">
-						<ArrowLeftIcon size={16} /> Rezepte
-					</Link>
-				</Button>
-			}
-		>
+		<AppShell action={<BackToRecipesLink />}>
 			<PageHeader eyebrow="Rezept" title={recipe.name} />
 
 			<div className="flex flex-wrap gap-2">

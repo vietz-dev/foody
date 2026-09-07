@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { Button, Field, IconButton, Input, Textarea } from '@chakra-ui/react';
 import type { RecipeInput } from '@foody/contracts';
 import { AppShell, PageHeader } from '../../../components/app-shell';
-import { ArrowLeftIcon, PlusIcon } from '../../../components/icons';
+import { PlusIcon } from '../../../components/icons';
 import type { ExtractedRecipe } from '../../../lib/server/recipe-extractor';
 import { createRecipe } from '../actions';
+import { BackToRecipesLink } from '../back-to-recipes-link';
 import { ScanUpload } from './scan-upload';
 
 type IngredientRow = { quantity: string; unit: string; name: string };
@@ -63,15 +64,7 @@ export default function NewRecipePage() {
 	};
 
 	return (
-		<AppShell
-			action={
-				<Button asChild size="sm" rounded="full" variant="ghost" fontWeight="bold">
-					<Link href="/recipes">
-						<ArrowLeftIcon size={16} /> Rezepte
-					</Link>
-				</Button>
-			}
-		>
+		<AppShell action={<BackToRecipesLink />}>
 			<PageHeader eyebrow="Eure Sammlung" title="Neues Rezept" />
 
 			<form onSubmit={submit} className="flex flex-col gap-4">

@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from 'effect';
 import { PrismaService } from '../../infrastructure/prisma.js';
-import { getErrorMessage } from '../utils.js';
+import { tryRepositoryPromise } from '../utils.js';
 import { PlanRepositoryError } from './errors.js';
 import { addPlanState, normalizePortions } from './internal.js';
 import type { IPlanRepository } from './types.js';
@@ -16,57 +16,45 @@ export const PlanRepositoryLive = Layer.effect(
     const db = yield* PrismaService;
     const repository: IPlanRepository = {
       list: (householdId) =>
-        Effect.tryPromise({
-          try: async () => {
-            const [recipes, items] = await Promise.all([
-              db.recipe.findMany({ where: { householdId }, orderBy: { name: 'asc' } }),
-              db.weeklyPlanItem.findMany({ where: { householdId } })
-            ]);
-            return addPlanState(recipes, items);
-          },
-          catch: (error) =>
-            new PlanRepositoryError({ message: getErrorMessage(error), cause: error })
-        }),
+        tryRepositoryPromise(async () => {
+          const [recipes, items] = await Promise.all([
+            db.recipe.findMany({ where: { householdId }, orderBy: { name: 'asc' } }),
+            db.weeklyPlanItem.findMany({ where: { householdId } })
+          ]);
+          return addPlanState(recipes, items);
+        }, PlanRepositoryError),
       toggle: (householdId, recipeId) =>
-        Effect.tryPromise({
-          try: async () => {
-            const existing = await db.weeklyPlanItem.findUnique({
-              where: { householdId_recipeId: { householdId, recipeId } }
+        tryRepositoryPromise(async () => {
+          const existing = await db.weeklyPlanItem.findUnique({
+            where: { householdId_recipeId: { householdId, recipeId } }
+          });
+          if (existing) {
+            const selected = !existing.selected;
+            await db.weeklyPlanItem.update({
+              where: { id: existing.id },
+              data: selected ? { selected, selectedAt: new Date() } : { selected }
             });
-            if (existing) {
-              const selected = !existing.selected;
-              await db.weeklyPlanItem.update({
-                where: { id: existing.id },
-                data: selected ? { selected, selectedAt: new Date() } : { selected }
-              });
-              return selected;
-            }
-            await db.weeklyPlanItem.create({
-              data: { householdId, recipeId, selected: true, selectedAt: new Date() }
-            });
-            return true;
-          },
-          catch: (error) =>
-            new PlanRepositoryError({ message: getErrorMessage(error), cause: error })
-        }),
+            return selected;
+          }
+          await db.weeklyPlanItem.create({
+            data: { householdId, recipeId, selected: true, selectedAt: new Date() }
+          });
+          return true;
+        }, PlanRepositoryError),
       portions: (householdId, recipeId, portions) =>
-        Effect.tryPromise({
-          try: async () => {
-            const value = normalizePortions(portions);
-            const item = await db.weeklyPlanItem.findUnique({
-              where: { householdId_recipeId: { householdId, recipeId } }
+        tryRepositoryPromise(async () => {
+          const value = normalizePortions(portions);
+          const item = await db.weeklyPlanItem.findUnique({
+            where: { householdId_recipeId: { householdId, recipeId } }
+          });
+          if (item) {
+            await db.weeklyPlanItem.update({
+              where: { id: item.id },
+              data: { portions: value }
             });
-            if (item) {
-              await db.weeklyPlanItem.update({
-                where: { id: item.id },
-                data: { portions: value }
-              });
-            }
-            return value;
-          },
-          catch: (error) =>
-            new PlanRepositoryError({ message: getErrorMessage(error), cause: error })
-        })
+          }
+          return value;
+        }, PlanRepositoryError)
     };
 
     return PlanRepository.of(repository);
