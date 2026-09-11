@@ -14,7 +14,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@vietz-dev/typescript-config": "^0.1.0",
+    "@vietz-dev/typescript-config": "^1.0.0",
     "typescript": "5.9.3"
   }
 }
