@@ -1,4 +1,4 @@
-import { AuthLive, AuthTag, authConfigFromEnv, defineContext } from '@vietz/auth';
+import { AuthLive, AuthTag, authConfigFromEnv, defineContext } from '@vietz-dev/auth';
 import { Context, Effect, Layer } from 'effect';
 import { PrismaLive, PrismaService } from '../infrastructure/prisma.js';
 import { makeCatalogRepositoryDeps } from '../repositories/catalog/deps.js';

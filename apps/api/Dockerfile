@@ -16,14 +16,14 @@ RUN turbo prune api --docker
 FROM base AS builder
 # Manifests + lockfile first so `pnpm install` stays cached across source changes.
 COPY --from=pruner /app/out/json/ .
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ .
 # Bundle src + workspace packages into dist/index.js (turbo runs prisma:generate
 # first), then reinstall prod deps only (a fresh install, since `--prod` on an
 # existing tree leaves devDeps in .pnpm). pnpm skips @prisma/engines' postinstall
 # on that reinstall, so run it by hand: it fetches the schema-engine binary that
 # `prisma migrate deploy` needs.
-RUN pnpm turbo run build --filter=api \
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc pnpm turbo run build --filter=api \
     && rm -rf apps/api/src node_modules apps/*/node_modules packages/*/node_modules \
     && pnpm install --frozen-lockfile --prod \
     && node "$(find node_modules/.pnpm -path '*/@prisma/engines/scripts/postinstall.js')"

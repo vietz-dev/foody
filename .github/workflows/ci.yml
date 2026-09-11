@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read # @vietz-dev/* come from GitHub Packages
+
 jobs:
   build:
     name: Build & Test
@@ -23,6 +27,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          # @vietz-dev/* live in GitHub Packages; writes the auth line for them.
+          registry-url: https://npm.pkg.github.com
+          scope: '@vietz-dev'
 
       - uses: jdx/mise-action@v3
         with:
@@ -30,6 +37,8 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cache turbo
         uses: actions/cache@v4
