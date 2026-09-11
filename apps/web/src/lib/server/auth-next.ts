@@ -1,5 +1,5 @@
 import { nextCookies } from 'better-auth/next-js';
-import { authConfigFromEnv, createAuth, defineContext } from '@vietz/auth';
+import { authConfigFromEnv, createAuth, defineContext } from '@vietz-dev/auth';
 import { prisma } from './prisma';
 
 const householdContext = defineContext({

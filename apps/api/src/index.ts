@@ -3,7 +3,7 @@ import { RPCHandler } from '@orpc/server/fetch';
 import { implement, onError } from '@orpc/server';
 import { Hono } from 'hono';
 import { contract } from '@foody/contracts';
-import { createHonoEffectRuntime } from '@foody/hono-effect';
+import { createHonoEffectRuntime } from '@vietz-dev/hono-effect';
 import { AppLive, Auth } from './dependencies/runtime-deps.js';
 import { CatalogService } from './services/catalog/service.js';
 import { PlanService } from './services/plan/service.js';

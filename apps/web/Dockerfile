@@ -16,7 +16,7 @@ RUN turbo prune web --docker
 FROM base AS builder
 # Manifests + lockfile first so `pnpm install` stays cached across source changes.
 COPY --from=pruner /app/out/json/ .
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=secret,id=npmrc,target=/root/.npmrc pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ .
 # The auth route is initialised while Next.js collects route metadata; a
 # placeholder secret is enough at build time (never shipped: builder stage only).
