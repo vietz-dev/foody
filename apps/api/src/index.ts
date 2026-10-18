@@ -4,7 +4,7 @@ import { implement, onError } from '@orpc/server';
 import { Effect } from 'effect';
 import { Hono } from 'hono';
 import { contract } from '@foody/contracts';
-import { createHonoEffectRuntime } from '@foody/hono-effect';
+import { createHonoEffectRuntime } from '@vietz-dev/hono-effect';
 import { AppLive, Auth } from './dependencies/runtime-deps.js';
 import { CatalogService } from './services/catalog/service.js';
 import { PicnicService } from './services/picnic/service.js';

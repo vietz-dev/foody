@@ -6,7 +6,7 @@ The API is contract-first: request and response schemas live in
 
 `createApp(resolveContext)` receives the authenticated household context. The
 default export resolves it from the Better Auth session cookie forwarded by the
-web app (`@vietz/auth`, shared with the web app), so `BETTER_AUTH_SECRET` and
+web app (`@vietz-dev/auth`, shared with the web app), so `BETTER_AUTH_SECRET` and
 `BETTER_AUTH_URL` must match `apps/web`. No household identifier is accepted
 from an untrusted client header. Copy `.env.example` to `.env`; `pnpm dev` and
 `pnpm start` load it.
@@ -14,7 +14,7 @@ from an untrusted client header. Copy `.env.example` to `.env`; `pnpm dev` and
 The API uses Effect layers for dependency injection. Prisma is created once as
 a scoped `PrismaService`, repositories contain database access, and services
 contain the household-scoped business logic. The Hono/oRPC handlers execute
-service effects through the managed runtime adapter from `@foody/hono-effect`.
+service effects through the managed runtime adapter from `@vietz-dev/hono-effect`.
 Prisma belongs to the API. `pnpm dev`, `pnpm build`, `pnpm check-types` and
 `pnpm test` generate the client first (turbo task `prisma:generate`); apply
 development migrations with `pnpm --filter api run prisma:migrate`.

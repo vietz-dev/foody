@@ -9,8 +9,10 @@ Hono, Effect und oRPC.
 - `apps/web` – Next.js-Frontend mit Authentifizierung und Prisma
 - `apps/api` – Hono/oRPC-API
 - `packages/contracts` – gemeinsame API-Verträge
-- `packages/hono-effect` – Effect-Integration für Hono/oRPC
-- `packages/typescript-config` – gemeinsame Tools
+
+Authentifizierung, die Effect-Integration für Hono/oRPC und die TypeScript-Basis
+kommen aus dem geteilten SDK (`@vietz-dev/auth`, `@vietz-dev/hono-effect`,
+`@vietz-dev/typescript-config`, veröffentlicht auf GitHub Packages).
 
 ## Entwicklung
 

@@ -1,0 +1,10 @@
+# rw project configuration (schemaVersion 1). Commands are argument arrays.
+# kind plain (default): optional commands.build/watch/test run at the worktree root.
+# kind pnpm-symlink: pnpm.commands run at the SDK worktree root; pnpm.consumer.test runs at pnpm.consumer.path.
+schemaVersion: 1
+repositories:
+  sdk:
+    source: vietz-sdk
+    baseRef: refs/heads/main
+    kind: plain
+    purpose: 'pnpm-Monorepo mit geteilten Libraries fuer alle vietz-dev-Anwendungen: der Standardort fuer Aufgaben, die einmal geloest und in allen Apps wiederverwendet werden. Bibliotheken hier bearbeiten, auf dem rw-Branch committen, pushen und einen PR im SDK-Repo oeffnen; danach die Abhaengigkeit in diesem Projekt aktualisieren. Sobald dieses Projekt ein SDK-Paket per pnpm konsumiert, den Alias auf kind pnpm-symlink umstellen.'

@@ -14,7 +14,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
+    "@vietz-dev/typescript-config": "^1.0.0",
     "typescript": "5.9.3"
   }
 }
