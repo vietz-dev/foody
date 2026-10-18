@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/vietz-dev/foody/compare/v0.2.1...v0.2.2) (2026-10-18)
+
+
+### Features
+
+* Picnic cart integration with per-user account and ingredient mapping ([7a1e529](https://github.com/vietz-dev/foody/commit/7a1e529fc63f2d0da7d7c2f5622f1f7eaf2ad87e))
+
 ## [0.2.1](https://github.com/vietz-dev/foody/compare/v0.2.0...v0.2.1) (2026-09-06)
 
 
