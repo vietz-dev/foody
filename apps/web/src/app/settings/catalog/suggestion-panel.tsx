@@ -25,10 +25,10 @@ export function SuggestionPanel({
 			className="mb-6 rounded-2xl border border-[var(--line)] bg-[#f3f8f3] p-4 sm:p-5"
 			aria-label="KI-Vorschläge"
 		>
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div>
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0 flex-1">
 					<h2 className="text-base font-bold">Zutaten automatisch ordnen</h2>
-					<p className="mt-1 text-sm text-[var(--muted)]">
+					<p className="mt-1 text-sm text-[#526257]">
 						Die KI schlägt Namen und Gruppen vor. Gespeichert wird erst nach deiner Bestätigung.
 						{query && <> Aktuelle Suche: „{query}“.</>}
 					</p>
@@ -38,6 +38,9 @@ export function SuggestionPanel({
 					size="sm"
 					rounded="full"
 					colorPalette="brand"
+					bg="#137548"
+					_hover={{ bg: '#0e603a' }}
+					className="self-start sm:shrink-0"
 					loading={busy}
 					onClick={async () => {
 						setBusy(true);
@@ -79,7 +82,8 @@ export function SuggestionPanel({
 			{suggestions && suggestions.groups.length > 0 && (
 				<div className="mt-5 space-y-4">
 					<p role="status" className="text-sm font-semibold">
-						{suggestions.groups.length} Vorschläge zur Prüfung
+						{suggestions.groups.length}{' '}
+						{suggestions.groups.length === 1 ? 'Vorschlag' : 'Vorschläge'} zur Prüfung
 					</p>
 					{suggestions.groups.map((suggestion) => (
 						<SuggestionCard
@@ -135,10 +139,21 @@ function SuggestionCard({
 				: [];
 		})
 	);
+	const labelById = new Map(
+		suggestion.ids.map((id) => {
+			const entry = byId.get(id);
+			const name = entry?.name ?? id;
+			const sameNameIds = suggestion.ids.filter((otherId) => byId.get(otherId)?.name === name);
+			return [
+				id,
+				sameNameIds.length > 1 ? `${name} (Eintrag ${sameNameIds.indexOf(id) + 1})` : name
+			] as const;
+		})
+	);
 
 	return (
 		<div className="rounded-xl bg-white p-4 ring-1 ring-[var(--line)]">
-			<p className="text-xs text-[var(--muted)]">{suggestion.reason}</p>
+			<p className="text-sm break-words text-[#59665d]">{suggestion.reason}</p>
 			<div className="mt-3 grid gap-4 md:grid-cols-2">
 				<Field.Root required invalid={!name.trim()}>
 					<Field.Label>Einheitlicher Name</Field.Label>
@@ -146,16 +161,17 @@ function SuggestionCard({
 					<Field.ErrorText>Bitte einen Namen eingeben.</Field.ErrorText>
 				</Field.Root>
 				<Field.Root>
-					<Field.Label>Zielzutat</Field.Label>
+					<Field.Label htmlFor={`suggestion-target-${preferredTarget}`}>Zielzutat</Field.Label>
 					<select
+						id={`suggestion-target-${preferredTarget}`}
 						value={selectedTarget ?? ''}
 						onChange={(event) => setTargetId(event.target.value)}
 						disabled={busy || !selectedIds.length}
-						className="h-10 rounded-md border border-[var(--line)] bg-white px-3 text-sm"
+						className="h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--green)]"
 					>
 						{selectedIds.map((id) => (
 							<option key={id} value={id}>
-								{byId.get(id)?.name}
+								{labelById.get(id)}
 							</option>
 						))}
 					</select>
@@ -165,7 +181,7 @@ function SuggestionCard({
 				<legend className="text-sm font-semibold">Diese Zutaten verknüpfen</legend>
 				<div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
 					{suggestion.ids.map((id) => (
-						<label key={id} className="flex items-center gap-2 text-sm">
+						<label key={id} className="flex items-center gap-2 text-sm break-words">
 							<input
 								type="checkbox"
 								checked={selectedIds.includes(id)}
@@ -177,7 +193,7 @@ function SuggestionCard({
 								disabled={busy}
 								className="h-4 w-4 accent-[var(--green)]"
 							/>
-							{byId.get(id)?.name}
+							{labelById.get(id)}
 						</label>
 					))}
 				</div>
@@ -199,6 +215,8 @@ function SuggestionCard({
 					size="sm"
 					rounded="full"
 					colorPalette="brand"
+					bg="#137548"
+					_hover={{ bg: '#0e603a' }}
 					loading={busy}
 					disabled={!selectedTarget || !name.trim() || (products.size > 1 && !targetProduct)}
 					onClick={async () => {
