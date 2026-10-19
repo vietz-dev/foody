@@ -73,6 +73,9 @@ describe('loadShoppingList', () => {
       },
       ingredient: {
         findMany: async () => catalog.map((entry) => ({ ...entry })),
+        update: async ({ where, data }: { where: { id: string }; data: { aliases: string[] } }) => {
+          catalog.find((entry) => entry.id === where.id)!.aliases = data.aliases;
+        },
         create: async ({ data }: { data: { name: string } }) => {
           const entry = {
             id: 'new-ingredient',
@@ -87,6 +90,12 @@ describe('loadShoppingList', () => {
           catalog.push(entry);
           return entry;
         }
+      },
+      ingredientExpression: {
+        upsert: async ({ create }: { create: { ingredientId: string; name: string } }) => ({
+          id: `${create.ingredientId}:${create.name}`,
+          ...create
+        })
       }
     } as unknown as PrismaClient;
 

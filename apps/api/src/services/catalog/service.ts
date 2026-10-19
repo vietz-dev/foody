@@ -24,6 +24,10 @@ export type ICatalogService = {
     householdId: string,
     data: ResolveCatalogGroupRequest
   ) => Effect.Effect<{ success: true }, CatalogServiceError>;
+  detachExpression: (
+    householdId: string,
+    expressionId: string
+  ) => Effect.Effect<{ success: true }, CatalogServiceError>;
   backfill: (
     householdId: string
   ) => Effect.Effect<
@@ -57,6 +61,10 @@ export const CatalogServiceLive = Layer.effect(
       resolveGroup: (householdId, data) =>
         repository
           .resolveGroup(householdId, data)
+          .pipe(Effect.as({ success: true as const }), Effect.mapError(mapCatalogServiceError)),
+      detachExpression: (householdId, expressionId) =>
+        repository
+          .detachExpression(householdId, expressionId)
           .pipe(Effect.as({ success: true as const }), Effect.mapError(mapCatalogServiceError)),
       backfill: (householdId) =>
         repository.backfill(householdId).pipe(

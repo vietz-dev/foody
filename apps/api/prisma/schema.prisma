@@ -60,19 +60,22 @@ model Recipe {
 }
 
 model RecipeIngredient {
-  id           String      @id @default(cuid())
+  id           String                @id @default(cuid())
   recipeId     String
-  recipe       Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe       Recipe                @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   name         String
   quantity     Decimal?
   unit         String?
-  isRawText    Boolean     @default(false)
-  sortOrder    Int         @default(0)
+  isRawText    Boolean               @default(false)
+  sortOrder    Int                   @default(0)
   ingredientId String?
-  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+  ingredient   Ingredient?           @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+  expressionId String?
+  expression   IngredientExpression? @relation(fields: [expressionId], references: [id], onDelete: SetNull)
 
   @@index([recipeId])
   @@index([ingredientId])
+  @@index([expressionId])
   @@map("recipe_ingredients")
 }
 
@@ -120,9 +123,24 @@ model Ingredient {
   picnicUnitQuantity String?
 
   recipeIngredients RecipeIngredient[]
+  expressions       IngredientExpression[]
 
   @@index([householdId])
   @@map("ingredients")
+}
+
+model IngredientExpression {
+  id           String     @id @default(cuid())
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  name         String
+  createdAt    DateTime   @default(now())
+
+  recipeIngredients RecipeIngredient[]
+
+  @@unique([ingredientId, name])
+  @@index([ingredientId])
+  @@map("ingredient_expressions")
 }
 
 // Per-user Picnic login. Stores only the encrypted session token, never the password.

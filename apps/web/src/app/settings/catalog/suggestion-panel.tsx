@@ -161,7 +161,9 @@ function SuggestionCard({
 					<Field.ErrorText>Bitte einen Namen eingeben.</Field.ErrorText>
 				</Field.Root>
 				<Field.Root>
-					<Field.Label htmlFor={`suggestion-target-${preferredTarget}`}>Zielzutat</Field.Label>
+					<Field.Label htmlFor={`suggestion-target-${preferredTarget}`}>
+						Bestehende Zielgruppe
+					</Field.Label>
 					<select
 						id={`suggestion-target-${preferredTarget}`}
 						value={selectedTarget ?? ''}
@@ -178,10 +180,13 @@ function SuggestionCard({
 				</Field.Root>
 			</div>
 			<fieldset className="mt-4">
-				<legend className="text-sm font-semibold">Diese Zutaten verknüpfen</legend>
+				<legend className="text-sm font-semibold">Diese Einträge gemeinsam gruppieren</legend>
+				<p className="mt-1 text-xs text-[#59665d]">
+					Alle markierten Einträge und ihre Ausdrücke werden mit einem Klick Teil derselben Gruppe.
+				</p>
 				<div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
 					{suggestion.ids.map((id) => (
-						<label key={id} className="flex items-center gap-2 text-sm break-words">
+						<label key={id} className="flex min-w-0 items-start gap-2 text-sm break-words">
 							<input
 								type="checkbox"
 								checked={selectedIds.includes(id)}
@@ -191,9 +196,20 @@ function SuggestionCard({
 									)
 								}
 								disabled={busy}
-								className="h-4 w-4 accent-[var(--green)]"
+								className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--green)]"
 							/>
-							{labelById.get(id)}
+							<span className="min-w-0">
+								<span className="block">{labelById.get(id)}</span>
+								{(byId.get(id)?.expressions.length ?? 0) > 1 && (
+									<span className="block text-xs text-[#59665d]">
+										Enthält:{' '}
+										{byId
+											.get(id)
+											?.expressions.map((member) => member.name)
+											.join(', ')}
+									</span>
+								)}
+							</span>
 						</label>
 					))}
 				</div>
@@ -244,7 +260,7 @@ function SuggestionCard({
 						}
 					}}
 				>
-					Bestätigen und speichern
+					Gruppe bestätigen und speichern
 				</Button>
 				<Button
 					type="button"

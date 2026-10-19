@@ -3,7 +3,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Field, Input } from '@chakra-ui/react';
 import type { CatalogEntry } from '@foody/contracts';
-import { importRecipeIngredients, mergeCatalogEntry, saveCatalogEntry } from './actions';
+import {
+	detachCatalogExpression,
+	importRecipeIngredients,
+	mergeCatalogEntry,
+	saveCatalogEntry
+} from './actions';
 import { SuggestionPanel } from './suggestion-panel';
 
 type View = 'pending' | 'confirmed';
@@ -54,7 +59,7 @@ export function CatalogEditor({
 			<div className="mb-5 rounded-2xl border border-[var(--line)] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
 				<div>
 					<h2 className="text-sm font-bold">Bestehende Rezepte erfassen</h2>
-					<p className="mt-1 text-xs text-[var(--muted)]">
+					<p className="mt-1 text-xs text-[#59665d]">
 						Verknüpft alte Rezeptzutaten mit dem Katalog. Neue Namen erscheinen unter „Zu prüfen“.
 					</p>
 				</div>
@@ -93,6 +98,8 @@ export function CatalogEditor({
 						rounded="full"
 						colorPalette="brand"
 						variant={view === tab ? 'solid' : 'outline'}
+						bg={view === tab ? '#137548' : undefined}
+						_hover={view === tab ? { bg: '#0e603a' } : undefined}
 						aria-pressed={view === tab}
 						onClick={() => {
 							setView(tab);
@@ -115,9 +122,14 @@ export function CatalogEditor({
 										type="button"
 										onClick={() => setSelectedId(entry.id)}
 										aria-current={selected?.id === entry.id ? 'true' : undefined}
-										className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-[#f3f8f3] ${selected?.id === entry.id ? 'bg-[#e8f4eb] text-[var(--green)]' : 'text-[var(--ink)]'}`}
+										className={`w-full px-4 py-3 text-left text-sm font-semibold hover:bg-[#f3f8f3] ${selected?.id === entry.id ? 'bg-[#e8f4eb] text-[#126b43]' : 'text-[var(--ink)]'}`}
 									>
 										{entry.name}
+										{entry.expressions.length > 1 && (
+											<span className="ml-2 text-xs font-normal text-[#526257]">
+												{entry.expressions.length} Ausdrücke
+											</span>
+										)}
 										{entry.isStaple && <span className="ml-2 text-xs font-normal">Vorrat</span>}
 									</button>
 								</li>
@@ -188,9 +200,7 @@ function EntryForm({
 		<div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[var(--line)] sm:p-6">
 			<h2 className="text-lg font-bold">{entry.name}</h2>
 			{entry.aliases.length > 0 && (
-				<p className="mt-1 text-xs text-[var(--muted)]">
-					Auch bekannt als: {entry.aliases.join(', ')}
-				</p>
+				<p className="mt-1 text-xs text-[#59665d]">Auch bekannt als: {entry.aliases.join(', ')}</p>
 			)}
 			<form
 				className="mt-5 space-y-4"
@@ -225,17 +235,53 @@ function EntryForm({
 					size="sm"
 					rounded="full"
 					colorPalette="brand"
+					bg="#137548"
+					_hover={{ bg: '#0e603a' }}
 					loading={busy}
 					disabled={!name.trim()}
 				>
 					Speichern und bestätigen
 				</Button>
 			</form>
+			<div className="mt-6 border-t border-[var(--line)] pt-5">
+				<h3 className="text-sm font-bold">Mitglieder dieser Zutatengruppe</h3>
+				<p className="mt-1 text-xs text-[#59665d]">
+					Diese Ausdrücke werden in Rezepten und der Einkaufsliste als „{entry.name}“ gesammelt.
+				</p>
+				<ul className="mt-3 divide-y divide-[var(--line)] rounded-xl border border-[var(--line)] bg-[#fbfcf9] px-3">
+					{entry.expressions.map((expression) => (
+						<li
+							key={expression.id}
+							className="flex flex-col items-start gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+						>
+							<span className="min-w-0 text-sm break-words">{expression.name}</span>
+							{entry.expressions.length > 1 && (
+								<Button
+									type="button"
+									size="xs"
+									variant="ghost"
+									colorPalette="brand"
+									className="shrink-0"
+									disabled={busy}
+									onClick={() =>
+										void run(
+											() => detachCatalogExpression(expression.id),
+											'Ausdruck aus der Gruppe gelöst.'
+										)
+									}
+								>
+									Aus Gruppe lösen
+								</Button>
+							)}
+						</li>
+					))}
+				</ul>
+			</div>
 			{targets.length > 0 && (
 				<div className="mt-6 border-t border-[var(--line)] pt-5">
 					<h3 className="text-sm font-bold">Mit vorhandener Zutat zusammenführen</h3>
-					<p className="mt-1 text-xs text-[var(--muted)]">
-						Rezepte und Aliasse gehen auf die Zielzutat über. Ihr Name bleibt erhalten.
+					<p className="mt-1 text-xs text-[#59665d]">
+						Alle Ausdrücke gehen in die Zielgruppe über. Du kannst sie später einzeln wieder lösen.
 					</p>
 					<label htmlFor={`target-${entry.id}`} className="mt-3 block text-sm font-medium">
 						Zielzutat

@@ -68,6 +68,11 @@ const router = os.router({
     ),
     resolveGroup: os.catalog.resolveGroup.handler(({ input, context }) =>
       runService(CatalogService, (service) => service.resolveGroup(context.householdId, input))
+    ),
+    detachExpression: os.catalog.detachExpression.handler(({ input, context }) =>
+      runService(CatalogService, (service) =>
+        service.detachExpression(context.householdId, input.expressionId)
+      )
     )
   },
   picnic: {

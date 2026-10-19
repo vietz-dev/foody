@@ -40,6 +40,10 @@ export type ICatalogRepository = {
     householdId: string,
     data: ResolveCatalogGroupRequest
   ) => Effect.Effect<void, CatalogRepositoryError>;
+  detachExpression: (
+    householdId: string,
+    expressionId: string
+  ) => Effect.Effect<void, CatalogRepositoryError>;
   backfill: (householdId: string) => Effect.Effect<CatalogBackfillResult, CatalogRepositoryError>;
 };
 
@@ -50,5 +54,6 @@ export const catalogEntrySelect = {
   aliases: true,
   picnicProductId: true,
   picnicProductName: true,
-  status: true
+  status: true,
+  expressions: { select: { id: true, name: true }, orderBy: { createdAt: 'asc' as const } }
 } as const;
