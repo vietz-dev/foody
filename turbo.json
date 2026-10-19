@@ -25,6 +25,11 @@
       "dependsOn": ["prisma:generate"],
       "cache": false,
       "persistent": true
+    },
+    "dev:proxy": {
+      "dependsOn": ["prisma:generate"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:proxy": "turbo run dev:proxy",
     "lint": "oxlint",
     "test": "turbo run test",
     "format": "oxfmt",

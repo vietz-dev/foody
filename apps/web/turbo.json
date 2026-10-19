@@ -11,6 +11,9 @@
 		},
 		"dev": {
 			"dependsOn": ["$TURBO_EXTENDS$", "api#prisma:generate"]
+		},
+		"dev:proxy": {
+			"dependsOn": ["$TURBO_EXTENDS$", "api#prisma:generate"]
 		}
 	}
 }
