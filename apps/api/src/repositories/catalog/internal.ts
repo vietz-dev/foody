@@ -32,6 +32,20 @@ type MergeEntry = {
   picnicUnitQuantity: string | null;
 };
 
+type MembershipClient = Pick<PrismaClient, 'ingredient' | 'ingredientExpression'>;
+
+const aliasesFromExpressions = async (db: MembershipClient, ingredientId: string, name: string) => {
+  const expressions = await db.ingredientExpression.findMany({
+    where: { ingredientId },
+    orderBy: { createdAt: 'asc' }
+  });
+  return expressions.reduce(
+    (aliases, expression) =>
+      mergeIngredientAliases({ name, aliases }, { name: expression.name, aliases: [] }),
+    [] as string[]
+  );
+};
+
 export const mergeIngredientData = (target: MergeEntry, source: MergeEntry) => ({
   status: 'confirmed' as const,
   aliases: mergeIngredientAliases(target, source),
@@ -68,27 +82,109 @@ export const resolveCatalogGroup = async (
 
     for (const sourceId of sourceIds) {
       const source = byId.get(sourceId)!;
+      const expressions = await tx.ingredientExpression.findMany({
+        where: { ingredientId: sourceId }
+      });
       await tx.recipeIngredient.updateMany({
         where: { ingredientId: sourceId },
         data: { ingredientId: targetId }
       });
+
+      for (const expression of expressions) {
+        const existing = await tx.ingredientExpression.findUnique({
+          where: { ingredientId_name: { ingredientId: targetId, name: expression.name } }
+        });
+        if (existing) {
+          await tx.recipeIngredient.updateMany({
+            where: { expressionId: expression.id },
+            data: { expressionId: existing.id }
+          });
+          await tx.ingredientExpression.delete({ where: { id: expression.id } });
+        } else {
+          await tx.ingredientExpression.update({
+            where: { id: expression.id },
+            data: { ingredientId: targetId }
+          });
+        }
+      }
       target = { ...target, ...mergeIngredientData(target, source) };
       await tx.ingredient.delete({ where: { id: sourceId } });
     }
+
+    await tx.ingredientExpression.upsert({
+      where: { ingredientId_name: { ingredientId: targetId, name: canonicalName } },
+      create: { ingredientId: targetId, name: canonicalName },
+      update: {}
+    });
 
     await tx.ingredient.update({
       where: { id: targetId },
       data: {
         status: 'confirmed',
         name: canonicalName,
-        aliases: mergeIngredientAliases(
-          { name: canonicalName, aliases: target.aliases },
-          { name: target.name, aliases: [] }
-        ),
+        aliases: await aliasesFromExpressions(tx, targetId, canonicalName),
         isStaple: target.isStaple,
         picnicProductId: target.picnicProductId,
         picnicProductName: target.picnicProductName,
         picnicUnitQuantity: target.picnicUnitQuantity
+      }
+    });
+  });
+};
+
+export const detachCatalogExpression = async (
+  db: PrismaClient,
+  householdId: string,
+  expressionId: string
+): Promise<void> => {
+  await db.$transaction(async (tx) => {
+    const expression = await tx.ingredientExpression.findFirst({
+      where: { id: expressionId, ingredient: { householdId } },
+      include: { ingredient: true }
+    });
+    if (!expression) throw new Error('Dieser Ausdruck gehört nicht zum Haushalt.');
+
+    const remaining = await tx.ingredientExpression.findMany({
+      where: { ingredientId: expression.ingredientId, id: { not: expressionId } },
+      orderBy: { createdAt: 'asc' }
+    });
+    if (!remaining.length)
+      throw new Error('Die letzte Zutat einer Gruppe kann nicht entfernt werden.');
+    if (
+      remaining.some(
+        (member) =>
+          normalizeIngredientName(member.name) === normalizeIngredientName(expression.name)
+      )
+    )
+      throw new Error('Gleichlautende Ausdrücke können nicht getrennt zugeordnet werden.');
+
+    const detached = await tx.ingredient.create({
+      data: {
+        householdId,
+        name: expression.name,
+        status: 'pending',
+        aliases: []
+      }
+    });
+    await tx.ingredientExpression.update({
+      where: { id: expressionId },
+      data: { ingredientId: detached.id }
+    });
+    await tx.recipeIngredient.updateMany({
+      where: { expressionId },
+      data: { ingredientId: detached.id }
+    });
+
+    const originalName = expression.ingredient.name;
+    const nameStillPresent = remaining.some(
+      (member) => normalizeIngredientName(member.name) === normalizeIngredientName(originalName)
+    );
+    const remainingName = nameStillPresent ? originalName : remaining[0].name;
+    await tx.ingredient.update({
+      where: { id: expression.ingredientId },
+      data: {
+        name: remainingName,
+        aliases: await aliasesFromExpressions(tx, expression.ingredientId, remainingName)
       }
     });
   });
@@ -119,9 +215,20 @@ export const backfillCatalog = async (
       all.push(match);
     }
     if (match) {
+      const name = row.name.trim();
+      const expression = await db.ingredientExpression.upsert({
+        where: { ingredientId_name: { ingredientId: match.id, name } },
+        create: { ingredientId: match.id, name },
+        update: {}
+      });
+      if (normalizeIngredientName(name) !== normalizeIngredientName(match.name)) {
+        const aliases = mergeIngredientAliases(match, { name, aliases: [] });
+        await db.ingredient.update({ where: { id: match.id }, data: { aliases } });
+        match.aliases = aliases;
+      }
       await db.recipeIngredient.update({
         where: { id: row.id },
-        data: { ingredientId: match.id }
+        data: { ingredientId: match.id, expressionId: expression.id }
       });
       linkedCount++;
     }

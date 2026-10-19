@@ -72,7 +72,8 @@ const catalogEntry = z.object({
   isStaple: z.boolean(),
   aliases: z.array(z.string()),
   picnicProductId: z.string().nullable(),
-  picnicProductName: z.string().nullable()
+  picnicProductName: z.string().nullable(),
+  expressions: z.array(z.object({ id, name: z.string() }))
 });
 
 export const contract = {
@@ -125,6 +126,9 @@ export const contract = {
           acceptPicnicConflict: z.boolean()
         })
       )
+      .output(z.object({ success: z.literal(true) })),
+    detachExpression: oc
+      .input(z.object({ expressionId: id }))
       .output(z.object({ success: z.literal(true) }))
   },
   picnic: {

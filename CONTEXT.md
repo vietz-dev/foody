@@ -19,14 +19,25 @@ stores selection state and the number of portions to prepare.
 
 ## Ingredient catalog
 
-The household-wide canonical vocabulary for ingredients. New names are
-`pending` until reviewed; confirmed entries may be marked as `isStaple` and
-can absorb aliases through merging.
+The household-wide collection of ingredient expressions and collected
+ingredients. New collected ingredients are `pending` until reviewed.
+
+## Ingredient expression
+
+The wording of an ingredient in a recipe or a known alternative name. It
+remains identifiable even when it belongs to a collected ingredient, so a
+mistaken assignment can be removed later.
+
+## Collected ingredient
+
+The shared ingredient identity for one or more expressions. It has a canonical
+name and may be marked as a staple or linked to one Picnic product. Its members
+can be reviewed and changed without erasing their original wording.
 
 ## Shopping list
 
-A derived view of selected weekly-plan recipes. It groups mapped ingredients
-by catalog identity and separates them into shopping, staple, and unmapped
+A derived view of selected weekly-plan recipes. It groups mapped expressions
+by collected ingredient and separates them into shopping, staple, and unmapped
 sections.
 
 ## Picnic account

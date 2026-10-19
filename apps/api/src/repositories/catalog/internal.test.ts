@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { PrismaClient } from '../../generated/prisma/client.js';
-import { mergeIngredientAliases, mergeIngredientData, resolveCatalogGroup } from './internal.js';
+import {
+  detachCatalogExpression,
+  mergeIngredientAliases,
+  mergeIngredientData,
+  resolveCatalogGroup
+} from './internal.js';
 
 describe('mergeIngredientData', () => {
   it('keeps the target name and carries useful source settings into it', () => {
@@ -92,6 +97,12 @@ describe('resolveCatalogGroup', () => {
     ];
     const moved: string[] = [];
     const deleted: string[] = [];
+    const expressions = [
+      { id: 'expr-oil', ingredientId: 'oil', name: 'Öl' },
+      { id: 'expr-frying', ingredientId: 'frying', name: 'Öl (zum Braten)' },
+      { id: 'expr-serving', ingredientId: 'serving', name: 'Öl (zum Servieren)' },
+      { id: 'expr-alias', ingredientId: 'serving', name: 'Servieröl' }
+    ];
     let saved: Record<string, unknown> | undefined;
     const transaction = {
       ingredient: {
@@ -104,8 +115,55 @@ describe('resolveCatalogGroup', () => {
         }
       },
       recipeIngredient: {
-        updateMany: async ({ where }: { where: { ingredientId: string } }) => {
-          moved.push(where.ingredientId);
+        updateMany: async ({ where }: { where: { ingredientId?: string } }) => {
+          if (where.ingredientId) moved.push(where.ingredientId);
+        }
+      },
+      ingredientExpression: {
+        findMany: async ({ where }: { where: { ingredientId: string } }) =>
+          expressions.filter((expression) => expression.ingredientId === where.ingredientId),
+        findUnique: async ({
+          where
+        }: {
+          where: { ingredientId_name: { ingredientId: string; name: string } };
+        }) =>
+          expressions.find(
+            (expression) =>
+              expression.ingredientId === where.ingredientId_name.ingredientId &&
+              expression.name === where.ingredientId_name.name
+          ) ?? null,
+        update: async ({
+          where,
+          data
+        }: {
+          where: { id: string };
+          data: { ingredientId: string };
+        }) => {
+          expressions.find((expression) => expression.id === where.id)!.ingredientId =
+            data.ingredientId;
+        },
+        delete: async ({ where }: { where: { id: string } }) => {
+          expressions.splice(
+            expressions.findIndex((expression) => expression.id === where.id),
+            1
+          );
+        },
+        upsert: async ({
+          where,
+          create
+        }: {
+          where: { ingredientId_name: { ingredientId: string; name: string } };
+          create: { ingredientId: string; name: string };
+        }) => {
+          const existing = expressions.find(
+            (expression) =>
+              expression.ingredientId === where.ingredientId_name.ingredientId &&
+              expression.name === where.ingredientId_name.name
+          );
+          if (existing) return existing;
+          const expression = { id: 'new-expression', ...create };
+          expressions.push(expression);
+          return expression;
         }
       }
     };
@@ -122,6 +180,12 @@ describe('resolveCatalogGroup', () => {
 
     expect(moved).toEqual(['frying', 'serving']);
     expect(deleted).toEqual(['frying', 'serving']);
+    expect(expressions.map((expression) => expression.ingredientId)).toEqual([
+      'oil',
+      'oil',
+      'oil',
+      'oil'
+    ]);
     expect(saved).toMatchObject({
       status: 'confirmed',
       name: 'Öl',
@@ -129,6 +193,71 @@ describe('resolveCatalogGroup', () => {
       isStaple: true,
       picnicProductId: 'preferred'
     });
+  });
+
+  it('detaches one expression and relinks only its recipes', async () => {
+    const expressions = [
+      { id: 'base', ingredientId: 'oil', name: 'Öl', createdAt: new Date(0) },
+      { id: 'frying', ingredientId: 'oil', name: 'Öl (zum Braten)', createdAt: new Date(1) }
+    ];
+    const recipes = [
+      { id: 'one', ingredientId: 'oil', expressionId: 'base' },
+      { id: 'two', ingredientId: 'oil', expressionId: 'frying' }
+    ];
+    let remainingGroup: Record<string, unknown> | undefined;
+    const transaction = {
+      ingredient: {
+        create: async () => ({ id: 'new-group' }),
+        update: async ({ data }: { data: Record<string, unknown> }) => {
+          remainingGroup = data;
+        }
+      },
+      ingredientExpression: {
+        findFirst: async () => ({
+          ...expressions[0],
+          ingredient: { id: 'oil', name: 'Öl' }
+        }),
+        findMany: async ({ where }: { where: { ingredientId: string; id?: { not: string } } }) =>
+          expressions.filter(
+            (expression) =>
+              expression.ingredientId === where.ingredientId && expression.id !== where.id?.not
+          ),
+        update: async ({
+          where,
+          data
+        }: {
+          where: { id: string };
+          data: { ingredientId: string };
+        }) => {
+          expressions.find((expression) => expression.id === where.id)!.ingredientId =
+            data.ingredientId;
+        }
+      },
+      recipeIngredient: {
+        updateMany: async ({
+          where,
+          data
+        }: {
+          where: { expressionId: string };
+          data: { ingredientId: string };
+        }) => {
+          recipes
+            .filter((recipe) => recipe.expressionId === where.expressionId)
+            .forEach((recipe) => {
+              recipe.ingredientId = data.ingredientId;
+            });
+        }
+      }
+    };
+    const db = {
+      $transaction: async (run: (tx: typeof transaction) => Promise<void>) => run(transaction)
+    } as unknown as PrismaClient;
+
+    await detachCatalogExpression(db, 'home', 'base');
+
+    expect(recipes.map((recipe) => recipe.ingredientId)).toEqual(['new-group', 'oil']);
+    expect(expressions.map((expression) => expression.ingredientId)).toEqual(['new-group', 'oil']);
+    expect(remainingGroup).toMatchObject({ name: 'Öl (zum Braten)', aliases: [] });
   });
 
   it('rejects duplicate or missing entries before changing any links', async () => {

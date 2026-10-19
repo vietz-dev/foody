@@ -50,3 +50,9 @@ export async function resolveCatalogSuggestion(
 	await api.catalog.resolveGroup({ targetId, sourceIds, name: name.trim(), acceptPicnicConflict });
 	refreshCatalog();
 }
+
+export async function detachCatalogExpression(expressionId: string) {
+	await requireUser();
+	await api.catalog.detachExpression({ expressionId });
+	refreshCatalog();
+}

@@ -4,8 +4,8 @@ import { tryRepositoryPromise } from '../utils.js';
 import { CatalogRepositoryError } from './errors.js';
 import {
   backfillCatalog,
+  detachCatalogExpression,
   mergeIngredientAliases,
-  mergeIngredientData,
   resolveCatalogGroup
 } from './internal.js';
 import { catalogEntrySelect, type ICatalogRepository } from './types.js';
@@ -50,6 +50,11 @@ export const CatalogRepositoryLive = Layer.effect(
           await db.$transaction(async (tx) => {
             const entry = await tx.ingredient.findFirstOrThrow({ where: { id, householdId } });
             const name = data.name?.trim() || entry.name;
+            await tx.ingredientExpression.upsert({
+              where: { ingredientId_name: { ingredientId: id, name } },
+              create: { ingredientId: id, name },
+              update: {}
+            });
             await tx.ingredient.update({
               where: { id },
               data: {
@@ -65,32 +70,25 @@ export const CatalogRepositoryLive = Layer.effect(
           });
         }, CatalogRepositoryError),
       merge: (householdId, sourceId, targetId) =>
-        tryRepositoryPromise(
-          () =>
-            db
-              .$transaction(async (tx) => {
-                if (sourceId === targetId)
-                  throw new Error('Eine Zutat kann nicht mit sich selbst zusammengeführt werden.');
-                const [source, target] = await Promise.all([
-                  tx.ingredient.findFirstOrThrow({ where: { id: sourceId, householdId } }),
-                  tx.ingredient.findFirstOrThrow({ where: { id: targetId, householdId } })
-                ]);
-                await tx.recipeIngredient.updateMany({
-                  where: { ingredientId: sourceId },
-                  data: { ingredientId: targetId }
-                });
-                await tx.ingredient.update({
-                  where: { id: targetId },
-                  data: mergeIngredientData(target, source)
-                });
-                await tx.ingredient.delete({ where: { id: sourceId } });
-              })
-              .then(() => undefined),
-          CatalogRepositoryError
-        ),
+        tryRepositoryPromise(async () => {
+          const target = await db.ingredient.findFirstOrThrow({
+            where: { id: targetId, householdId }
+          });
+          await resolveCatalogGroup(db, householdId, {
+            targetId,
+            sourceIds: [sourceId],
+            name: target.name,
+            acceptPicnicConflict: false
+          });
+        }, CatalogRepositoryError),
       resolveGroup: (householdId, data) =>
         tryRepositoryPromise(
           () => resolveCatalogGroup(db, householdId, data),
+          CatalogRepositoryError
+        ),
+      detachExpression: (householdId, expressionId) =>
+        tryRepositoryPromise(
+          () => detachCatalogExpression(db, householdId, expressionId),
           CatalogRepositoryError
         ),
       backfill: (householdId) =>
