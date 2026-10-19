@@ -1,6 +1,7 @@
 import { normalizeIngredientName } from '../utils.js';
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import type { CatalogBackfillResult, ResolveCatalogGroupRequest } from './types.js';
+import { ensureIngredientExpression } from './expressions.js';
 
 export const mergeIngredientAliases = (
   target: { name: string; aliases: string[] },
@@ -111,11 +112,7 @@ export const resolveCatalogGroup = async (
       await tx.ingredient.delete({ where: { id: sourceId } });
     }
 
-    await tx.ingredientExpression.upsert({
-      where: { ingredientId_name: { ingredientId: targetId, name: canonicalName } },
-      create: { ingredientId: targetId, name: canonicalName },
-      update: {}
-    });
+    await ensureIngredientExpression(tx, targetId, canonicalName);
 
     await tx.ingredient.update({
       where: { id: targetId },
@@ -216,11 +213,7 @@ export const backfillCatalog = async (
     }
     if (match) {
       const name = row.name.trim();
-      const expression = await db.ingredientExpression.upsert({
-        where: { ingredientId_name: { ingredientId: match.id, name } },
-        create: { ingredientId: match.id, name },
-        update: {}
-      });
+      const expression = await ensureIngredientExpression(db, match.id, name);
       if (normalizeIngredientName(name) !== normalizeIngredientName(match.name)) {
         const aliases = mergeIngredientAliases(match, { name, aliases: [] });
         await db.ingredient.update({ where: { id: match.id }, data: { aliases } });

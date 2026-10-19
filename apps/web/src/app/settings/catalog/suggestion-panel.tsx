@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Field, Input } from '@chakra-ui/react';
+import { Button, Field } from '@chakra-ui/react';
 import type { CatalogEntry } from '@foody/contracts';
 import type { CatalogSuggestion, CatalogSuggestionResult } from '@/lib/server/catalog-suggestions';
 import { previewCatalogSuggestions, resolveCatalogSuggestion } from './actions';
+import { CanonicalNameField } from './canonical-name-field';
 
 export function SuggestionPanel({
 	entries,
@@ -161,11 +162,7 @@ function SuggestionCard({
 		<div className="rounded-xl bg-white p-4 ring-1 ring-[var(--line)]">
 			<p className="text-sm break-words text-[#59665d]">{suggestion.reason}</p>
 			<div className="mt-3">
-				<Field.Root required invalid={!name.trim()}>
-					<Field.Label>Einheitlicher Name</Field.Label>
-					<Input value={name} onChange={(event) => setName(event.target.value)} disabled={busy} />
-					<Field.ErrorText>Bitte einen Namen eingeben.</Field.ErrorText>
-				</Field.Root>
+				<CanonicalNameField value={name} onChange={setName} disabled={busy} />
 			</div>
 			<fieldset className="mt-4">
 				<legend className="text-sm font-semibold">Diese Einträge gemeinsam gruppieren</legend>
