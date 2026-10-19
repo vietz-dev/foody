@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.3](https://github.com/vietz-dev/foody/compare/v0.2.2...v0.2.3) (2026-10-19)
+
+
+### Features
+
+* integrate devproxy for local development ([32947e0](https://github.com/vietz-dev/foody/commit/32947e080678fc137144fa75ce1a29c795fc6b09))
+* preserve ingredient group members ([f637617](https://github.com/vietz-dev/foody/commit/f637617b236c6ab13946cd73b2a138720e9e978e))
+* preview AI catalog normalization for review ([09bc063](https://github.com/vietz-dev/foody/commit/09bc06341ef58b6c7437efe6a3f2b8461b928fa5))
+* search confirmed ingredient groups in dialog ([e6adba1](https://github.com/vietz-dev/foody/commit/e6adba12d5cfd3bbae7e552afe6f273c15a7a2fb))
+
+
+### Bug Fixes
+
+* name manual action as adding to group ([b92756c](https://github.com/vietz-dev/foody/commit/b92756ce6f5da7945bb637ba2e4ba348309b6c91))
+* normalize shopping list via catalog and add admin editor ([25abebd](https://github.com/vietz-dev/foody/commit/25abebd92e408ff32ff223bf4dced7335ece6a42))
+* polish catalog suggestion review ([581e3fd](https://github.com/vietz-dev/foody/commit/581e3fd96072faed45eef7a29dbcc6d253ab57a1))
+* simplify catalog group confirmation ([40bebd5](https://github.com/vietz-dev/foody/commit/40bebd580b95a2de58fdb6151e8b05b6bb3c6052))
+
 ## [0.2.2](https://github.com/vietz-dev/foody/compare/v0.2.1...v0.2.2) (2026-10-18)
 
 
