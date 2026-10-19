@@ -2,7 +2,7 @@ import { Context, Effect, Layer } from 'effect';
 import { PrismaService } from '../../infrastructure/prisma.js';
 import { tryRepositoryPromise } from '../utils.js';
 import { CatalogRepositoryError } from './errors.js';
-import { backfillCatalog, mergeIngredientAliases } from './internal.js';
+import { backfillCatalog, mergeIngredientAliases, mergeIngredientData } from './internal.js';
 import { catalogEntrySelect, type ICatalogRepository } from './types.js';
 
 export class CatalogRepository extends Context.Tag('CatalogRepository')<
@@ -42,13 +42,21 @@ export const CatalogRepositoryLive = Layer.effect(
         }, CatalogRepositoryError),
       confirm: (householdId, id, data) =>
         tryRepositoryPromise(async () => {
-          await db.ingredient.updateMany({
-            where: { id, householdId },
-            data: {
-              status: 'confirmed',
-              ...(data.name?.trim() ? { name: data.name.trim() } : {}),
-              ...(data.isStaple === undefined ? {} : { isStaple: data.isStaple })
-            }
+          await db.$transaction(async (tx) => {
+            const entry = await tx.ingredient.findFirstOrThrow({ where: { id, householdId } });
+            const name = data.name?.trim() || entry.name;
+            await tx.ingredient.update({
+              where: { id },
+              data: {
+                status: 'confirmed',
+                name,
+                aliases: mergeIngredientAliases(
+                  { name, aliases: entry.aliases },
+                  { name: entry.name, aliases: [] }
+                ),
+                ...(data.isStaple === undefined ? {} : { isStaple: data.isStaple })
+              }
+            });
           });
         }, CatalogRepositoryError),
       merge: (householdId, sourceId, targetId) =>
@@ -56,6 +64,8 @@ export const CatalogRepositoryLive = Layer.effect(
           () =>
             db
               .$transaction(async (tx) => {
+                if (sourceId === targetId)
+                  throw new Error('Eine Zutat kann nicht mit sich selbst zusammengeführt werden.');
                 const [source, target] = await Promise.all([
                   tx.ingredient.findFirstOrThrow({ where: { id: sourceId, householdId } }),
                   tx.ingredient.findFirstOrThrow({ where: { id: targetId, householdId } })
@@ -66,7 +76,7 @@ export const CatalogRepositoryLive = Layer.effect(
                 });
                 await tx.ingredient.update({
                   where: { id: targetId },
-                  data: { status: 'confirmed', aliases: mergeIngredientAliases(target, source) }
+                  data: mergeIngredientData(target, source)
                 });
                 await tx.ingredient.delete({ where: { id: sourceId } });
               })

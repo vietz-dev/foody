@@ -13,6 +13,19 @@ export default async function SettingsPage() {
 		>
 			<PageHeader eyebrow="Nur für dich" title="Einstellungen" />
 			<PicnicConnect initial={picnic} />
+			<section className="mt-8 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-[var(--line)]">
+				<h2 className="text-lg font-bold">Für euren Haushalt</h2>
+				<p className="mt-1 text-sm text-[var(--muted)]">
+					Namen vereinheitlichen und doppelte Zutaten zusammenführen.
+				</p>
+				<Link
+					href="/settings/catalog"
+					className="mt-3 inline-block text-sm font-bold text-[var(--green)]"
+				>
+					Zutatenkatalog bearbeiten →
+				</Link>
+			</section>
 		</AppShell>
 	);
 }
+import Link from 'next/link';

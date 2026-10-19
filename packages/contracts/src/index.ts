@@ -164,3 +164,4 @@ export type PlanRecipe = z.infer<typeof planRecipe>;
 export type ShoppingListItem = z.infer<typeof shoppingListItem>;
 export type PicnicProduct = z.infer<typeof picnicProduct>;
 export type PicnicProductRef = z.infer<typeof picnicProductRef>;
+export type CatalogEntry = z.infer<typeof catalogEntry>;

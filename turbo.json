@@ -12,6 +12,18 @@
     "build": {
       "dependsOn": ["^build", "prisma:generate"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "OIDC_ISSUER",
+        "OIDC_CLIENT_ID",
+        "OIDC_CLIENT_SECRET",
+        "ANTHROPIC_API_KEY",
+        "PICNIC_TOKEN_SECRET",
+        "API_URL",
+        "PORT"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "check-types": {
@@ -23,11 +35,35 @@
     },
     "dev": {
       "dependsOn": ["prisma:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "OIDC_ISSUER",
+        "OIDC_CLIENT_ID",
+        "OIDC_CLIENT_SECRET",
+        "ANTHROPIC_API_KEY",
+        "PICNIC_TOKEN_SECRET",
+        "API_URL",
+        "PORT"
+      ],
       "cache": false,
       "persistent": true
     },
     "dev:proxy": {
       "dependsOn": ["prisma:generate"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "OIDC_ISSUER",
+        "OIDC_CLIENT_ID",
+        "OIDC_CLIENT_SECRET",
+        "ANTHROPIC_API_KEY",
+        "PICNIC_TOKEN_SECRET",
+        "API_URL",
+        "PORT"
+      ],
       "cache": false,
       "persistent": true
     }
