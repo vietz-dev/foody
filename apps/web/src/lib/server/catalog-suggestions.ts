@@ -58,18 +58,27 @@ export function validateCatalogSuggestions(
 ): CatalogSuggestion[] {
 	const byId = new Map(entries.map((entry) => [entry.id, entry]));
 	const used = new Set<string>();
+	const usedNames = new Set<string>();
 	const valid: CatalogSuggestion[] = [];
-	for (const group of groups) {
+	for (const group of [...groups].sort((a, b) => b.ids.length - a.ids.length)) {
 		const ids = [...new Set(group.ids)];
 		const name = group.name.trim();
+		const nameKey = name.toLocaleLowerCase('de');
+		const picnicProductIds = new Set(
+			ids.map((id) => byId.get(id)?.picnicProductId).filter((id) => id != null)
+		);
 		if (
 			!name ||
+			usedNames.has(nameKey) ||
+			picnicProductIds.size > 1 ||
 			ids.length !== group.ids.length ||
 			ids.some((id) => !byId.has(id) || used.has(id)) ||
+			ids.some((id) => /\boder\b/i.test(byId.get(id)?.name ?? '')) ||
 			(ids.length === 1 && byId.get(ids[0])?.name === name)
 		)
 			continue;
 		ids.forEach((id) => used.add(id));
+		usedNames.add(nameKey);
 		valid.push({ ids, name, reason: group.reason.trim() });
 	}
 	return valid;
@@ -93,7 +102,7 @@ export async function suggestCatalogGroups(
 			baseURL: 'https://api.anthropic.com'
 		});
 		const { output } = await generateText({
-			model: anthropic('claude-sonnet-5-5'),
+			model: anthropic('claude-haiku-5-5'),
 			output: Output.object({ schema: proposalSchema }),
 			system: `Du bereinigst einen deutschen Zutatenkatalog für Rezepte und Einkaufslisten.
 Schlage nur sinnvolle, sichere Normalisierungen und Gruppen aus den gegebenen IDs vor.
@@ -101,6 +110,7 @@ Klammerzusätze wie „zum Braten“, „restlich“ oder „zum Garnieren“ be
 Unterscheide aber Sorten und Produkte: Olivenöl, Sesamöl und neutrales Öl, frische und getrocknete Kräuter, sowie unterschiedliche Fleischarten dürfen nicht blind zusammengeführt werden. Zusätze mit „oder“ nennen oft ein anderes Produkt und sind unsicher.
 Wenn zwei Einträge unterschiedliche Picnic-Produkte haben, schlage keine Zusammenführung vor.
 Wenn eine Zusammenführung mehrdeutig ist, lass sie weg. Gib nur Gruppen mit mindestens zwei passenden Einträgen oder eine einzelne Zutat mit einem verbesserten Namen zurück.
+Gib jeden einheitlichen Namen nur einmal zurück. Falls mehrere passende Einträge denselben Namen erhalten sollen, fasse ihre IDs in einer Gruppe zusammen.
 Erfinde keine IDs. Verwende kurze deutsche Gruppennamen und je Gruppe einen kurzen Grund. Alle Änderungen müssen vor dem Speichern durch einen Menschen bestätigt werden.`,
 			prompt: JSON.stringify(
 				entries.map(({ id, name, aliases, picnicProductName }) => ({
