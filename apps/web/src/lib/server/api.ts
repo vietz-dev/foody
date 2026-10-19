@@ -7,7 +7,7 @@ import type { Contract } from '@foody/contracts';
 // Server-only oRPC client. Forwards the browser's session cookie so the API
 // can resolve the household with its own Better Auth instance.
 const link = new RPCLink({
-	url: `${process.env.API_URL ?? 'http://localhost:3001'}/rpc`,
+	url: `${process.env.DEVPROXY_URL ?? process.env.API_URL ?? 'http://localhost:3001'}/rpc`,
 	headers: async () => ({ cookie: (await headers()).get('cookie') ?? '' })
 });
 

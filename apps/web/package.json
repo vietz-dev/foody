@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "next dev",
+		"dev:proxy": "NODE_USE_SYSTEM_CA=1 devproxy run --project foody --url-env BETTER_AUTH_URL web -- next dev -p '{port}'",
 		"build": "next build",
 		"start": "next start",
 		"check-types": "tsc --noEmit"
