@@ -2,7 +2,12 @@ import { Context, Effect, Layer } from 'effect';
 import { PrismaService } from '../../infrastructure/prisma.js';
 import { tryRepositoryPromise } from '../utils.js';
 import { CatalogRepositoryError } from './errors.js';
-import { backfillCatalog, mergeIngredientAliases, mergeIngredientData } from './internal.js';
+import {
+  backfillCatalog,
+  mergeIngredientAliases,
+  mergeIngredientData,
+  resolveCatalogGroup
+} from './internal.js';
 import { catalogEntrySelect, type ICatalogRepository } from './types.js';
 
 export class CatalogRepository extends Context.Tag('CatalogRepository')<
@@ -81,6 +86,11 @@ export const CatalogRepositoryLive = Layer.effect(
                 await tx.ingredient.delete({ where: { id: sourceId } });
               })
               .then(() => undefined),
+          CatalogRepositoryError
+        ),
+      resolveGroup: (householdId, data) =>
+        tryRepositoryPromise(
+          () => resolveCatalogGroup(db, householdId, data),
           CatalogRepositoryError
         ),
       backfill: (householdId) =>

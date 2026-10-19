@@ -1,6 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { api } from '@/lib/server/api';
+import { suggestCatalogGroups } from '@/lib/server/catalog-suggestions';
 import { requireUser } from '@/lib/server/session';
 
 const refreshCatalog = () => {
@@ -27,4 +28,25 @@ export async function importRecipeIngredients() {
 	const result = await api.admin.backfill({});
 	refreshCatalog();
 	return result;
+}
+
+export async function previewCatalogSuggestions(query: string) {
+	await requireUser();
+	const catalog = await api.catalog.list({});
+	const search = query.trim().toLocaleLowerCase('de');
+	const entries = [...catalog.pending, ...catalog.confirmed].filter((entry) =>
+		[entry.name, ...entry.aliases].some((name) => name.toLocaleLowerCase('de').includes(search))
+	);
+	return suggestCatalogGroups(entries);
+}
+
+export async function resolveCatalogSuggestion(
+	targetId: string,
+	sourceIds: string[],
+	name: string,
+	acceptPicnicConflict: boolean
+) {
+	await requireUser();
+	await api.catalog.resolveGroup({ targetId, sourceIds, name: name.trim(), acceptPicnicConflict });
+	refreshCatalog();
 }

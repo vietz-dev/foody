@@ -1,6 +1,9 @@
 import { Context, Effect, Layer } from 'effect';
 import { CatalogRepository } from '../../repositories/catalog/repository.js';
-import type { ConfirmCatalogEntryRequest } from '../../repositories/catalog/types.js';
+import type {
+  ConfirmCatalogEntryRequest,
+  ResolveCatalogGroupRequest
+} from '../../repositories/catalog/types.js';
 import { CatalogServiceError } from './errors.js';
 import { mapCatalogServiceError } from './internal.js';
 
@@ -16,6 +19,10 @@ export type ICatalogService = {
     householdId: string,
     sourceId: string,
     targetId: string
+  ) => Effect.Effect<{ success: true }, CatalogServiceError>;
+  resolveGroup: (
+    householdId: string,
+    data: ResolveCatalogGroupRequest
   ) => Effect.Effect<{ success: true }, CatalogServiceError>;
   backfill: (
     householdId: string
@@ -46,6 +53,10 @@ export const CatalogServiceLive = Layer.effect(
       merge: (householdId, sourceId, targetId) =>
         repository
           .merge(householdId, sourceId, targetId)
+          .pipe(Effect.as({ success: true as const }), Effect.mapError(mapCatalogServiceError)),
+      resolveGroup: (householdId, data) =>
+        repository
+          .resolveGroup(householdId, data)
           .pipe(Effect.as({ success: true as const }), Effect.mapError(mapCatalogServiceError)),
       backfill: (householdId) =>
         repository.backfill(householdId).pipe(

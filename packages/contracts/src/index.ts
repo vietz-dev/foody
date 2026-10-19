@@ -70,7 +70,9 @@ const catalogEntry = z.object({
   id,
   name: z.string(),
   isStaple: z.boolean(),
-  aliases: z.array(z.string())
+  aliases: z.array(z.string()),
+  picnicProductId: z.string().nullable(),
+  picnicProductName: z.string().nullable()
 });
 
 export const contract = {
@@ -113,6 +115,16 @@ export const contract = {
       .output(z.object({ success: z.literal(true) })),
     merge: oc
       .input(z.object({ sourceId: id, targetId: id }))
+      .output(z.object({ success: z.literal(true) })),
+    resolveGroup: oc
+      .input(
+        z.object({
+          targetId: id,
+          sourceIds: z.array(id).max(150),
+          name: z.string().trim().min(1),
+          acceptPicnicConflict: z.boolean()
+        })
+      )
       .output(z.object({ success: z.literal(true) }))
   },
   picnic: {

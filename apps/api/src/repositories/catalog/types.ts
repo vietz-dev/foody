@@ -6,6 +6,13 @@ export type ConfirmCatalogEntryRequest = {
   isStaple?: boolean;
 };
 
+export type ResolveCatalogGroupRequest = {
+  targetId: string;
+  sourceIds: string[];
+  name: string;
+  acceptPicnicConflict: boolean;
+};
+
 export type CatalogOverview = {
   defaultServingRecipes: unknown[];
   pendingCount: number;
@@ -29,6 +36,10 @@ export type ICatalogRepository = {
     sourceId: string,
     targetId: string
   ) => Effect.Effect<void, CatalogRepositoryError>;
+  resolveGroup: (
+    householdId: string,
+    data: ResolveCatalogGroupRequest
+  ) => Effect.Effect<void, CatalogRepositoryError>;
   backfill: (householdId: string) => Effect.Effect<CatalogBackfillResult, CatalogRepositoryError>;
 };
 
@@ -37,5 +48,7 @@ export const catalogEntrySelect = {
   name: true,
   isStaple: true,
   aliases: true,
+  picnicProductId: true,
+  picnicProductName: true,
   status: true
 } as const;

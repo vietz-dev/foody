@@ -65,6 +65,9 @@ const router = os.router({
       runService(CatalogService, (service) =>
         service.merge(context.householdId, input.sourceId, input.targetId)
       )
+    ),
+    resolveGroup: os.catalog.resolveGroup.handler(({ input, context }) =>
+      runService(CatalogService, (service) => service.resolveGroup(context.householdId, input))
     )
   },
   picnic: {
