@@ -11,6 +11,7 @@ import {
 } from './actions';
 import { SuggestionPanel } from './suggestion-panel';
 import { GroupPicker } from './group-picker';
+import { CanonicalNameField } from './canonical-name-field';
 
 type View = 'pending' | 'confirmed';
 
@@ -212,17 +213,13 @@ function EntryForm({
 					void run(() => saveCatalogEntry(entry.id, name, isStaple), 'Zutat gespeichert.');
 				}}
 			>
-				<Field.Root required invalid={!name.trim()}>
-					<Field.Label>Einheitlicher Name</Field.Label>
-					<Input
-						value={name}
-						onChange={(event) => setName(event.target.value)}
-						disabled={busy}
-						rounded="xl"
-					/>
-					<Field.HelperText>Dieser Name erscheint künftig in der Einkaufsliste.</Field.HelperText>
-					<Field.ErrorText>Bitte einen Namen eingeben.</Field.ErrorText>
-				</Field.Root>
+				<CanonicalNameField
+					value={name}
+					onChange={setName}
+					disabled={busy}
+					rounded="xl"
+					helperText="Dieser Name erscheint künftig in der Einkaufsliste."
+				/>
 				<label className="flex items-center gap-3 text-sm font-medium">
 					<input
 						type="checkbox"

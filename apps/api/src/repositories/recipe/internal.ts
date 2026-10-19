@@ -1,6 +1,7 @@
 import type { PrismaClient } from '../../generated/prisma/client.js';
 import type { RecipeInput } from '@foody/contracts';
 import { normalizeIngredientName } from '../utils.js';
+import { ensureIngredientExpression } from '../catalog/expressions.js';
 
 type IngredientClient = Pick<PrismaClient, 'ingredient' | 'ingredientExpression'>;
 
@@ -30,11 +31,7 @@ export async function resolveIngredientIds(
       catalog.push(match);
     }
     const name = raw.trim();
-    const expression = await db.ingredientExpression.upsert({
-      where: { ingredientId_name: { ingredientId: match.id, name } },
-      create: { ingredientId: match.id, name },
-      update: {}
-    });
+    const expression = await ensureIngredientExpression(db, match.id, name);
     result.set(raw, { ingredientId: match.id, expressionId: expression.id });
   }
 

@@ -7,6 +7,24 @@ import {
   resolveCatalogGroup
 } from './internal.js';
 
+const transactionDb = <T>(transaction: T) =>
+  ({
+    $transaction: async (run: (tx: T) => Promise<unknown>) => run(transaction)
+  }) as unknown as PrismaClient;
+
+const guardedMergeDb = (entries: unknown[]) => {
+  let changed = false;
+  const db = transactionDb({
+    ingredient: { findMany: async () => entries },
+    recipeIngredient: {
+      updateMany: async () => {
+        changed = true;
+      }
+    }
+  });
+  return { db, wasChanged: () => changed };
+};
+
 describe('mergeIngredientData', () => {
   it('keeps the target name and carries useful source settings into it', () => {
     expect(
@@ -167,9 +185,7 @@ describe('resolveCatalogGroup', () => {
         }
       }
     };
-    const db = {
-      $transaction: async (run: (tx: typeof transaction) => Promise<void>) => run(transaction)
-    } as unknown as PrismaClient;
+    const db = transactionDb(transaction);
 
     await resolveCatalogGroup(db, 'home', {
       targetId: 'oil',
@@ -249,9 +265,7 @@ describe('resolveCatalogGroup', () => {
         }
       }
     };
-    const db = {
-      $transaction: async (run: (tx: typeof transaction) => Promise<void>) => run(transaction)
-    } as unknown as PrismaClient;
+    const db = transactionDb(transaction);
 
     await detachCatalogExpression(db, 'home', 'base');
 
@@ -261,18 +275,7 @@ describe('resolveCatalogGroup', () => {
   });
 
   it('rejects duplicate or missing entries before changing any links', async () => {
-    let changed = false;
-    const transaction = {
-      ingredient: { findMany: async () => [] },
-      recipeIngredient: {
-        updateMany: async () => {
-          changed = true;
-        }
-      }
-    };
-    const db = {
-      $transaction: async (run: (tx: typeof transaction) => Promise<void>) => run(transaction)
-    } as unknown as PrismaClient;
+    const { db, wasChanged } = guardedMergeDb([]);
 
     await expect(
       resolveCatalogGroup(db, 'home', {
@@ -290,11 +293,10 @@ describe('resolveCatalogGroup', () => {
         acceptPicnicConflict: false
       })
     ).rejects.toThrow('gehört nicht mehr');
-    expect(changed).toBe(false);
+    expect(wasChanged()).toBe(false);
   });
 
   it('requires explicit approval for conflicting Picnic mappings', async () => {
-    let changed = false;
     const entries = [
       { id: 'oil', name: 'Öl', aliases: [], isStaple: false, picnicProductId: 'product-a' },
       {
@@ -305,17 +307,7 @@ describe('resolveCatalogGroup', () => {
         picnicProductId: 'product-b'
       }
     ];
-    const transaction = {
-      ingredient: { findMany: async () => entries },
-      recipeIngredient: {
-        updateMany: async () => {
-          changed = true;
-        }
-      }
-    };
-    const db = {
-      $transaction: async (run: (tx: typeof transaction) => Promise<void>) => run(transaction)
-    } as unknown as PrismaClient;
+    const { db, wasChanged } = guardedMergeDb(entries);
 
     await expect(
       resolveCatalogGroup(db, 'home', {
@@ -325,6 +317,6 @@ describe('resolveCatalogGroup', () => {
         acceptPicnicConflict: false
       })
     ).rejects.toThrow('Unterschiedliche Picnic-Produkte');
-    expect(changed).toBe(false);
+    expect(wasChanged()).toBe(false);
   });
 });
