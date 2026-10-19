@@ -279,12 +279,13 @@ function EntryForm({
 			</div>
 			{targets.length > 0 && (
 				<div className="mt-6 border-t border-[var(--line)] pt-5">
-					<h3 className="text-sm font-bold">Mit vorhandener Zutat zusammenführen</h3>
+					<h3 className="text-sm font-bold">Zu bestehender Zutatengruppe hinzufügen</h3>
 					<p className="mt-1 text-xs text-[#59665d]">
-						Alle Ausdrücke gehen in die Zielgruppe über. Du kannst sie später einzeln wieder lösen.
+						Alle Ausdrücke dieses Eintrags werden der gewählten Gruppe zugeordnet. Du kannst sie
+						später einzeln wieder lösen.
 					</p>
 					<label htmlFor={`target-${entry.id}`} className="mt-3 block text-sm font-medium">
-						Zielzutat
+						Zutatengruppe
 					</label>
 					<select
 						id={`target-${entry.id}`}
@@ -311,13 +312,13 @@ function EntryForm({
 							const target = targets.find((item) => item.id === targetId);
 							if (
 								target &&
-								window.confirm(`„${entry.name}“ mit „${target.name}“ zusammenführen?`)
+								window.confirm(`„${entry.name}“ zur Gruppe „${target.name}“ hinzufügen?`)
 							) {
-								void run(() => mergeCatalogEntry(entry.id, target.id), 'Zutaten zusammengeführt.');
+								void run(() => mergeCatalogEntry(entry.id, target.id), 'Zur Gruppe hinzugefügt.');
 							}
 						}}
 					>
-						Zusammenführen
+						Zur Gruppe hinzufügen
 					</Button>
 				</div>
 			)}
