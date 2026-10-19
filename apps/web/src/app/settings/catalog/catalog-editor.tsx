@@ -10,6 +10,7 @@ import {
 	saveCatalogEntry
 } from './actions';
 import { SuggestionPanel } from './suggestion-panel';
+import { GroupPicker } from './group-picker';
 
 type View = 'pending' | 'confirmed';
 
@@ -146,7 +147,7 @@ export function CatalogEditor({
 						<EntryForm
 							key={selected.id}
 							entry={selected}
-							all={all}
+							groups={confirmed}
 							onSaved={() => setSelectedId(null)}
 						/>
 					) : (
@@ -162,23 +163,25 @@ export function CatalogEditor({
 
 function EntryForm({
 	entry,
-	all,
+	groups,
 	onSaved
 }: {
 	entry: CatalogEntry;
-	all: CatalogEntry[];
+	groups: CatalogEntry[];
 	onSaved: () => void;
 }) {
 	const router = useRouter();
 	const [name, setName] = useState(entry.name);
 	const [isStaple, setIsStaple] = useState(entry.isStaple);
 	const [targetId, setTargetId] = useState('');
+	const [pickerOpen, setPickerOpen] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState('');
 	const [notice, setNotice] = useState('');
-	const targets = all
+	const targets = groups
 		.filter((candidate) => candidate.id !== entry.id)
 		.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+	const target = targets.find((candidate) => candidate.id === targetId);
 
 	const run = async (action: () => Promise<void>, success: string) => {
 		setBusy(true);
@@ -281,26 +284,32 @@ function EntryForm({
 				<div className="mt-6 border-t border-[var(--line)] pt-5">
 					<h3 className="text-sm font-bold">Zu bestehender Zutatengruppe hinzufügen</h3>
 					<p className="mt-1 text-xs text-[#59665d]">
-						Alle Ausdrücke dieses Eintrags werden der gewählten Gruppe zugeordnet. Du kannst sie
-						später einzeln wieder lösen.
+						Alle Ausdrücke dieses Eintrags werden der gewählten bestätigten Gruppe zugeordnet. Du
+						kannst sie später einzeln wieder lösen.
 					</p>
-					<label htmlFor={`target-${entry.id}`} className="mt-3 block text-sm font-medium">
-						Zutatengruppe
-					</label>
-					<select
-						id={`target-${entry.id}`}
-						value={targetId}
-						onChange={(event) => setTargetId(event.target.value)}
+					<p className="mt-3 text-sm font-medium">Zutatengruppe</p>
+					<Button
+						className="mt-1 w-full justify-start"
+						type="button"
+						variant="outline"
+						rounded="xl"
 						disabled={busy}
-						className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm"
+						aria-haspopup="dialog"
+						onClick={() => setPickerOpen(true)}
 					>
-						<option value="">Bitte wählen …</option>
-						{targets.map((target) => (
-							<option key={target.id} value={target.id}>
-								{target.name}
-							</option>
-						))}
-					</select>
+						{target ? target.name : 'Gruppe suchen …'}
+					</Button>
+					{pickerOpen && (
+						<GroupPicker
+							groups={targets}
+							selectedId={targetId}
+							onSelect={(id) => {
+								setTargetId(id);
+								setPickerOpen(false);
+							}}
+							onClose={() => setPickerOpen(false)}
+						/>
+					)}
 					<Button
 						className="mt-3"
 						type="button"
@@ -309,7 +318,6 @@ function EntryForm({
 						variant="outline"
 						disabled={!targetId || busy}
 						onClick={() => {
-							const target = targets.find((item) => item.id === targetId);
 							if (
 								target &&
 								window.confirm(`„${entry.name}“ zur Gruppe „${target.name}“ hinzufügen?`)
