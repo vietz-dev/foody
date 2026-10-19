@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Field, Input } from '@chakra-ui/react';
 import type { CatalogEntry } from '@foody/contracts';
 import { importRecipeIngredients, mergeCatalogEntry, saveCatalogEntry } from './actions';
+import { SuggestionPanel } from './suggestion-panel';
 
 type View = 'pending' | 'confirmed';
 
@@ -31,6 +32,25 @@ export function CatalogEditor({
 
 	return (
 		<div className="mt-6">
+			<Field.Root className="mb-4">
+				<Field.Label>Zutaten suchen</Field.Label>
+				<Input
+					value={query}
+					onChange={(event) => {
+						setQuery(event.target.value);
+						setSelectedId(null);
+					}}
+					placeholder="Name oder Alias …"
+					bg="white"
+					rounded="xl"
+				/>
+			</Field.Root>
+			<SuggestionPanel
+				key={query}
+				entries={all}
+				confirmedIds={confirmed.map((entry) => entry.id)}
+				query={query}
+			/>
 			<div className="mb-5 rounded-2xl border border-[var(--line)] bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
 				<div>
 					<h2 className="text-sm font-bold">Bestehende Rezepte erfassen</h2>
@@ -87,19 +107,6 @@ export function CatalogEditor({
 			</div>
 			<div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
 				<section aria-label="Zutaten auswählen">
-					<Field.Root>
-						<Field.Label>Zutaten suchen</Field.Label>
-						<Input
-							value={query}
-							onChange={(event) => {
-								setQuery(event.target.value);
-								setSelectedId(null);
-							}}
-							placeholder="Name oder Alias …"
-							bg="white"
-							rounded="xl"
-						/>
-					</Field.Root>
 					{visible.length ? (
 						<ul className="mt-3 max-h-[32rem] overflow-y-auto rounded-2xl bg-white shadow-sm ring-1 ring-[var(--line)]">
 							{visible.map((entry) => (
