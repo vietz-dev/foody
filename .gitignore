@@ -24,6 +24,8 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+fnox.local.toml
+.fnox.local.toml
 
 # local databases (SQLite) and backups — MUST never be committed
 *.db

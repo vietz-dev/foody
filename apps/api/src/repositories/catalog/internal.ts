@@ -23,6 +23,24 @@ export const mergeIngredientAliases = (
   return aliases;
 };
 
+type MergeEntry = {
+  name: string;
+  aliases: string[];
+  isStaple: boolean;
+  picnicProductId: string | null;
+  picnicProductName: string | null;
+  picnicUnitQuantity: string | null;
+};
+
+export const mergeIngredientData = (target: MergeEntry, source: MergeEntry) => ({
+  status: 'confirmed' as const,
+  aliases: mergeIngredientAliases(target, source),
+  isStaple: target.isStaple || source.isStaple,
+  picnicProductId: target.picnicProductId ?? source.picnicProductId,
+  picnicProductName: target.picnicProductId ? target.picnicProductName : source.picnicProductName,
+  picnicUnitQuantity: target.picnicProductId ? target.picnicUnitQuantity : source.picnicUnitQuantity
+});
+
 export const backfillCatalog = async (
   db: PrismaClient,
   householdId: string

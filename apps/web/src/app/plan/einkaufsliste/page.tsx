@@ -30,6 +30,12 @@ export default async function ShoppingListPage() {
 					</Badge>
 				}
 			/>
+			<p className="mt-3 text-sm text-[var(--muted)]">
+				Namen oder Zuordnungen stimmen nicht?{' '}
+				<Link href="/settings/catalog" className="font-bold text-[var(--green)]">
+					Zutatenkatalog bearbeiten
+				</Link>
+			</p>
 
 			{isEmpty ? (
 				<p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--muted)]">
