@@ -126,11 +126,9 @@ function SuggestionCard({
 		suggestion.ids.find((id) => byId.get(id)?.name === suggestion.name) ??
 		suggestion.ids.find((id) => confirmedIds.includes(id)) ??
 		suggestion.ids[0];
-	const [targetId, setTargetId] = useState(preferredTarget);
+	const [picnicTargetId, setPicnicTargetId] = useState('');
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState('');
-	const selectedTarget = selectedIds.includes(targetId) ? targetId : selectedIds[0];
-	const targetProduct = selectedTarget ? byId.get(selectedTarget)?.picnicProductId : null;
 	const products = new Map(
 		selectedIds.flatMap((id) => {
 			const entry = byId.get(id);
@@ -139,6 +137,14 @@ function SuggestionCard({
 				: [];
 		})
 	);
+	const selectedTarget =
+		products.size > 1
+			? selectedIds.includes(picnicTargetId) && byId.get(picnicTargetId)?.picnicProductId
+				? picnicTargetId
+				: undefined
+			: selectedIds.includes(preferredTarget)
+				? preferredTarget
+				: selectedIds[0];
 	const labelById = new Map(
 		suggestion.ids.map((id) => {
 			const entry = byId.get(id);
@@ -154,29 +160,11 @@ function SuggestionCard({
 	return (
 		<div className="rounded-xl bg-white p-4 ring-1 ring-[var(--line)]">
 			<p className="text-sm break-words text-[#59665d]">{suggestion.reason}</p>
-			<div className="mt-3 grid gap-4 md:grid-cols-2">
+			<div className="mt-3">
 				<Field.Root required invalid={!name.trim()}>
 					<Field.Label>Einheitlicher Name</Field.Label>
 					<Input value={name} onChange={(event) => setName(event.target.value)} disabled={busy} />
 					<Field.ErrorText>Bitte einen Namen eingeben.</Field.ErrorText>
-				</Field.Root>
-				<Field.Root>
-					<Field.Label htmlFor={`suggestion-target-${preferredTarget}`}>
-						Bestehende Zielgruppe
-					</Field.Label>
-					<select
-						id={`suggestion-target-${preferredTarget}`}
-						value={selectedTarget ?? ''}
-						onChange={(event) => setTargetId(event.target.value)}
-						disabled={busy || !selectedIds.length}
-						className="h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--green)]"
-					>
-						{selectedIds.map((id) => (
-							<option key={id} value={id}>
-								{labelById.get(id)}
-							</option>
-						))}
-					</select>
 				</Field.Root>
 			</div>
 			<fieldset className="mt-4">
@@ -215,10 +203,30 @@ function SuggestionCard({
 				</div>
 			</fieldset>
 			{products.size > 1 && (
-				<p className="mt-3 text-sm font-semibold text-amber-800">
-					Unterschiedliche Picnic-Produkte: {[...products.values()].join(', ')}. Wähle die Zielzutat
-					mit dem Produkt, das erhalten bleiben soll.
-				</p>
+				<div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3">
+					<Field.Root required>
+						<Field.Label htmlFor={`suggestion-picnic-${preferredTarget}`}>
+							Welches Picnic-Produkt soll erhalten bleiben?
+						</Field.Label>
+						<select
+							id={`suggestion-picnic-${preferredTarget}`}
+							value={selectedTarget ?? ''}
+							onChange={(event) => setPicnicTargetId(event.target.value)}
+							disabled={busy}
+							className="h-10 w-full rounded-md border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--green)]"
+						>
+							<option value="">Bitte auswählen</option>
+							{selectedIds
+								.filter((id) => byId.get(id)?.picnicProductId)
+								.map((id) => (
+									<option key={id} value={id}>
+										{byId.get(id)?.picnicProductName ?? byId.get(id)?.picnicProductId} (
+										{labelById.get(id)})
+									</option>
+								))}
+						</select>
+					</Field.Root>
+				</div>
 			)}
 			{error && (
 				<p role="alert" className="mt-3 text-sm text-red-700">
@@ -234,7 +242,7 @@ function SuggestionCard({
 					bg="#137548"
 					_hover={{ bg: '#0e603a' }}
 					loading={busy}
-					disabled={!selectedTarget || !name.trim() || (products.size > 1 && !targetProduct)}
+					disabled={!selectedTarget || !name.trim()}
 					onClick={async () => {
 						if (!selectedTarget) return;
 						if (
